@@ -166,21 +166,14 @@ import { useUpload } from '../composables/useUpload';
 import { useAuth } from '../composables/useAuth';
 import { useDeviceDetection } from '../composables/useDeviceDetection';
 import LanguageSwitcher from '../components/LanguageSwitcher.vue';
-import { getApiBase, getDynamsoftLicenseKey } from '../utils/env.js';
+import { getApiBase } from '../utils/env.js';
 import { createScanner } from '../composables/useScanner';
 import '../assets/css/scan.css';
 import { isValidDn } from '../utils/dn.js';
 import { STATUS_DELIVERY_ITEMS, STATUS_DELIVERY_VALUES, STATUS_SITE_ORDERED_LIST } from '../config.js';
 import { getCookie } from '../utils/cookie.js';
 
-const LICENSE_KEY = getDynamsoftLicenseKey();
 const PHONE_COOKIE_KEY = 'phone_number';
-
-if (LICENSE_KEY && window?.Dynamsoft?.DBR?.BarcodeScanner) {
-  window.Dynamsoft.DBR.BarcodeScanner.license = LICENSE_KEY;
-} else if (!LICENSE_KEY) {
-  console.warn('Dynamsoft license key is not configured. Scanner features may be unavailable.');
-}
 
 const _i18n = await useI18n({ namespaces: ['core', 'index'], fallbackLang: 'id', defaultLang: 'id' });
 

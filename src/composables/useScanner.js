@@ -1,6 +1,9 @@
 // Lightweight wrapper around Dynamsoft BarcodeScanner to reuse scanner logic
+import { getDynamsoftLicenseKey } from '../utils/env.js';
+
 export async function createScanner() {
   let scanner = null;
+  let licenseConfigured = false;
 
   const ensureAvailable = () => {
     if (!window?.Dynamsoft?.DBR?.BarcodeScanner) {
@@ -8,8 +11,22 @@ export async function createScanner() {
     }
   };
 
+  const ensureLicense = () => {
+    if (licenseConfigured) return;
+    try {
+      const license = getDynamsoftLicenseKey();
+      if (license && window?.Dynamsoft?.DBR) {
+        window.Dynamsoft.DBR.BarcodeScanner.license = license;
+      }
+    } catch (err) {
+      console.warn('Failed to configure Dynamsoft license', err);
+    }
+    licenseConfigured = true;
+  };
+
   const init = async () => {
     ensureAvailable();
+    ensureLicense();
     if (!scanner) {
       scanner = await window.Dynamsoft.DBR.BarcodeScanner.createInstance();
     }
