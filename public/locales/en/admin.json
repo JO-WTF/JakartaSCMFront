@@ -41,6 +41,7 @@
   "actions.showMissingInGs": "Show DN not in GS",
   "actions.exportAll": "Export DN",
   "actions.exportRecords": "Export DN Update Records",
+  "actions.exportPdf": "Export to PDF",
   "actions.trustBackend": "Trust Backend",
   "actions.syncGoogleSheet": "Update Google Sheet Data",
   "actions.syncGoogleSheetSuccess": "Google Sheet sync triggered",

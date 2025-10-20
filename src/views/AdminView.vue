@@ -354,6 +354,15 @@
               />
             </label>
           </div>
+          <div v-if="exportPdfVisible" class="table-toggle-row__actions">
+            <button
+              type="button"
+              class="btn"
+              @click="handleExportPdf"
+            >
+              {{ translate('actions.exportPdf', 'Export to PDF') || 'Export to PDF' }}
+            </button>
+          </div>
         </div>
         <div id="hint" class="muted" data-i18n="hint.ready">输入条件后点击查询。</div>
         <a-table
@@ -824,6 +833,13 @@ const statusDisplayFn = shallowRef((value) => {
 const toAbsUrlFn = shallowRef((value) => (value ? String(value) : ''));
 const formatTimestampFn = shallowRef((value) => (value ? String(value) : ''));
 const translationVersion = ref(0);
+const exportPdfState = reactive({
+  url: '',
+  dnNumbers: [],
+});
+const exportPdfVisible = computed(
+  () => Boolean(exportPdfState.url && exportPdfState.dnNumbers.length)
+);
 
 const actionHandlers = reactive({
   onEdit: null,
@@ -1065,6 +1081,20 @@ const adminTableBridge = {
   notifyTranslations() {
     translationVersion.value += 1;
   },
+  setBatchPdfExport(config) {
+    if (
+      !config ||
+      !config.url ||
+      !Array.isArray(config.dnNumbers) ||
+      !config.dnNumbers.length
+    ) {
+      exportPdfState.url = '';
+      exportPdfState.dnNumbers = [];
+      return;
+    }
+    exportPdfState.url = String(config.url);
+    exportPdfState.dnNumbers = [...config.dnNumbers];
+  },
   registerActionHandlers(handlers = {}) {
     if (typeof handlers.onEdit === 'function') actionHandlers.onEdit = handlers.onEdit;
     if (typeof handlers.onDelete === 'function') actionHandlers.onDelete = handlers.onDelete;
@@ -1080,6 +1110,8 @@ const adminTableBridge = {
     rawTableItems.value = [];
     tablePaginationState.total = 0;
     expandedRowKeys.value = [];
+    exportPdfState.url = '';
+    exportPdfState.dnNumbers = [];
   },
 };
 
@@ -1198,6 +1230,17 @@ const handleViewHistory = (record) => {
 const handleOpenPhoto = (record) => {
   if (typeof actionHandlers.onOpenPhoto === 'function' && record?.absolutePhotoUrl) {
     actionHandlers.onOpenPhoto(record.absolutePhotoUrl);
+  }
+};
+
+const handleExportPdf = () => {
+  if (!exportPdfVisible.value || !exportPdfState.url) return;
+  try {
+    if (typeof window !== 'undefined') {
+      window.open(exportPdfState.url, '_blank', 'noopener');
+    }
+  } catch (err) {
+    console.error('Failed to open export PDF link', err);
   }
 };
 

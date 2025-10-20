@@ -1028,6 +1028,12 @@ body.admin-theme {
   gap: 16px;
   align-items: center;
 }
+.admin-page .table-toggle-row__actions {
+  margin-left: auto;
+}
+.admin-page .table-toggle-row__actions .btn {
+  white-space: nowrap;
+}
 .admin-page .status-switch {
   display: inline-flex;
   align-items: center;

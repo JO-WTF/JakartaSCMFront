@@ -45,6 +45,7 @@
   "actions.showMissingInGs": "Tampilkan DN yang tidak ada di GS",
   "actions.exportAll": "Ekspor DN",
   "actions.exportRecords": "Ekspor Catatan Pembaruan DN",
+  "actions.exportPdf": "Ekspor ke PDF",
   "actions.trustBackend": "Percaya Backend",
   "actions.syncGoogleSheet": "Perbarui data Google Sheet",
   "actions.syncGoogleSheetSuccess": "Sinkronisasi Google Sheet telah dijalankan",

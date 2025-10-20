@@ -268,6 +268,7 @@ export function setupAdminPage(
     mode: 'single',
     lastParams: '',
     show_deleted: false,
+    lastBatchDnNumbers: [],
   };
 
   function getNormalizedPageSize() {
@@ -715,6 +716,7 @@ export function setupAdminPage(
       mode = 'batch_du';
     }
     q.mode = mode;
+    q.lastBatchDnNumbers = mode === 'batch' ? dnTokens.slice() : [];
 
     if (mode === 'batch') {
       dnTokens.forEach((token) => params.append('dn_number', token));
@@ -791,6 +793,11 @@ export function setupAdminPage(
 
       const params = buildParamsAuto();
       const url = buildSearchUrl(params);
+      const shouldEnableBatchPdf =
+        q.mode === 'batch' && Array.isArray(q.lastBatchDnNumbers) && q.lastBatchDnNumbers.length > 0;
+      if (!shouldEnableBatchPdf) {
+        tableBridge?.setBatchPdfExport?.(null);
+      }
       const { resp, data, message } = await fetchWithPayload(url, { signal });
       if (!resp.ok) {
         throw new Error(message || `HTTP ${resp.status}`);
@@ -850,6 +857,20 @@ export function setupAdminPage(
         page: q.page,
         pageSize: q.page_size,
       });
+      if (shouldEnableBatchPdf) {
+        const pdfParams = new URLSearchParams();
+        q.lastBatchDnNumbers.forEach((token) => {
+          if (token) {
+            pdfParams.append('dn_number', token);
+          }
+        });
+        const query = pdfParams.toString();
+        const pdfUrl = `${API_BASE}/api/dn/export/details-pdf${query ? `?${query}` : ''}`;
+        tableBridge?.setBatchPdfExport?.({
+          url: pdfUrl,
+          dnNumbers: q.lastBatchDnNumbers.slice(),
+        });
+      }
       applyAllTranslations();
 
       hint.textContent = items.length
@@ -862,6 +883,7 @@ export function setupAdminPage(
         page: q.page,
         pageSize: q.page_size,
       });
+      tableBridge?.setBatchPdfExport?.(null);
     } finally {
       // Ensure any loading indicator is cleared regardless of outcome.
       try {
