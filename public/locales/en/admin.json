@@ -43,6 +43,7 @@
   "actions.exportRecords": "Export DN Update Records",
   "actions.exportPdf": "Export to PDF",
   "actions.trustBackend": "Trust Backend",
+  "actions.earlyBird": "Early Bird List",
   "actions.syncGoogleSheet": "Update Google Sheet Data",
   "actions.syncGoogleSheetSuccess": "Google Sheet sync triggered",
   "actions.syncGoogleSheetSuccessWithMsg": "Google Sheet sync triggered: {msg}",

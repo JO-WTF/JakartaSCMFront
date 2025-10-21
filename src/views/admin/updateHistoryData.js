@@ -1,11 +1,12 @@
 import { normalizeTextValue } from './utils.js';
+import { resolvePhotoUrl as resolvePhotoUrlGlobal } from '../../utils/photo.js';
 
 export function prepareUpdateHistoryItems(items = [], {
   i18n,
   i18nStatusDisplay,
   escapeHtml,
   formatTimestampToJakarta,
-  toAbsUrl,
+  resolvePhotoUrl = resolvePhotoUrlGlobal,
   getIconMarkup,
   getMapboxStaticImageUrl,
   statusDeliveryValueToKey,
@@ -61,7 +62,9 @@ export function prepareUpdateHistoryItems(items = [], {
     const statusDelivery = resolveStatusDeliveryDisplay(rawStatusDelivery);
     const statusSite = (typeof i18nStatusDisplay === 'function' ? i18nStatusDisplay(item?.status_site || '') : normalizeTextValue(item?.status_site || '')) || '';
     const remark = item?.remark ? String(item.remark) : '';
-    const photoUrl = item?.photo_url ? toAbsUrl(item.photo_url) : '';
+    const photoUrlResolver =
+      typeof resolvePhotoUrl === 'function' ? resolvePhotoUrl : resolvePhotoUrlGlobal;
+    const photoUrl = item?.photo_url ? photoUrlResolver(item.photo_url) : '';
     const createdAtRaw = item?.created_at ? formatTimestampToJakarta(item.created_at) : '';
     const createdAt = createdAtRaw ? String(createdAtRaw).replace(/\r?\n/, ' ').trim() : '';
 

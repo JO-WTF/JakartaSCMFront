@@ -47,6 +47,7 @@
   "actions.exportRecords": "Ekspor Catatan Pembaruan DN",
   "actions.exportPdf": "Ekspor ke PDF",
   "actions.trustBackend": "Percaya Backend",
+  "actions.earlyBird": "Daftar Early Bird",
   "actions.syncGoogleSheet": "Perbarui data Google Sheet",
   "actions.syncGoogleSheetSuccess": "Sinkronisasi Google Sheet telah dijalankan",
   "actions.syncGoogleSheetSuccessWithMsg": "Sinkronisasi Google Sheet telah dijalankan: {msg}",

@@ -4,6 +4,7 @@ import {
   STATUS_DELIVERY_ITEMS,
 } from '../../config.js';
 import { getApiBase, getMapboxAccessToken } from '../../utils/env.js';
+import { resolvePhotoUrl } from '../../utils/photo.js';
 
 import { createDnEntryManager } from './dnEntry.js';
 import { createStatusDeliveryCardManager } from './statusCards.js';
@@ -1004,7 +1005,7 @@ export function setupAdminPage(
         i18nStatusDisplay,
         escapeHtml,
         formatTimestampToJakarta,
-        toAbsUrl,
+        resolvePhotoUrl,
         getIconMarkup,
         getMapboxStaticImageUrl,
         statusDeliveryValueToKey: STATUS_DELIVERY_VALUE_TO_KEY,

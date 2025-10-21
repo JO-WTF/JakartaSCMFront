@@ -17,6 +17,14 @@
             v-if="showMapViewButton"
             type="button"
             class="btn ghost"
+            @click="openEarlyBirdView"
+          >
+            {{ translate('actions.earlyBird', 'Early Bird') || 'Early Bird' }}
+          </button>
+          <button
+            v-if="showMapViewButton"
+            type="button"
+            class="btn ghost"
             @click="openMapView"
           >
             地图视图
@@ -724,6 +732,7 @@ import { useBodyTheme } from '../composables/useBodyTheme';
 import 'dayjs/locale/zh-cn';
 import 'dayjs/locale/id';
 import { normalizeTextValue, showToast, isTimestampKey } from './admin/utils.js';
+import { resolvePhotoUrl } from '../utils/photo.js';
 
 dayjs.extend(customParseFormat);
 
@@ -1347,7 +1356,7 @@ const tableRows = computed(() => {
       statusMismatchTooltip: mismatchTooltip,
       hasPhoto: Boolean(photoUrl),
       photoUrl,
-      absolutePhotoUrl: photoUrl ? toAbsUrlFn.value(photoUrl) : '',
+      absolutePhotoUrl: photoUrl ? resolvePhotoUrl(photoUrl) : '',
       hasLocation: Boolean(mapUrl),
       mapUrl,
       detailEntries,
@@ -1442,6 +1451,10 @@ const tableColumns = computed(() => {
 
 const detailTitle = computed(() => translate('details.title', '全部字段') || '全部字段');
 const detailEmpty = computed(() => translate('details.empty', '暂无更多字段。') || '暂无更多字段。');
+
+const openEarlyBirdView = () => {
+  router.push({ name: 'early-bird' });
+};
 
 const openMapView = () => {
   const resolved = router.resolve({ name: 'map' });

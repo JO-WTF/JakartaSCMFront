@@ -18,6 +18,11 @@ const routes = [
     component: () => import('../views/AdminView.vue'),
   },
   {
+    path: '/early-bird',
+    name: 'early-bird',
+    component: () => import('../views/EarlyBirdView.vue'),
+  },
+  {
     path: '/dashboard',
     name: 'dashboard',
     component: () => import('../views/DashboardView.vue'),

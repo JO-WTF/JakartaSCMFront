@@ -36,3 +36,12 @@ export const getDynamsoftLicenseKey = () => {
   if (envValue) return envValue;
   return '';
 };
+
+export const getImageBaseUrl = () => {
+  const envValue = readImportMetaEnv('VITE_IMG_BASE');
+  if (envValue) {
+    return envValue.replace(/\/+$/, '');
+  }
+  const apiBase = getApiBase();
+  return apiBase ? apiBase.replace(/\/+$/, '') : '';
+};
