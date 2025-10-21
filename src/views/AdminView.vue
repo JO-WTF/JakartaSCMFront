@@ -284,26 +284,11 @@
                     信任后台
                   </button>
                   <button
-                    class="btn"
-                    id="btn-sync-google-sheet"
-                    data-i18n="actions.syncGoogleSheet"
-                  >
-                    更新Google Sheet数据
-                  </button>
-                  <button
                     class="btn ghost"
                     id="btn-dn-entry"
                     data-i18n="actions.dnEntry"
                   >
                     DN 录入
-                  </button>
-                  <button
-                    class="btn ghost"
-                    id="btn-archive-expired-dn"
-                    data-i18n="actions.archiveExpiredDn"
-                    disabled
-                  >
-                    归档过期DN
                   </button>
                 </div>
               </div>

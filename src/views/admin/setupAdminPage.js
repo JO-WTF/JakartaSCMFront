@@ -36,7 +36,6 @@ import {
   DEFAULT_STATUS_DELIVERY_VALUE,
   PLAN_MOS_TIME_ZONE,
   JAKARTA_UTC_OFFSET_MINUTES,
-  ARCHIVE_THRESHOLD_DAYS,
   TRANSPORT_MANAGER_STATUS_DELIVERY_CARDS,
   DN_DETAIL_KEYS,
   ICON_MARKUP,
@@ -148,7 +147,6 @@ export function setupAdminPage(
   const dnEntryPreview = el('dn-preview-modal');
   const dnCancel = el('dn-cancel');
   const dnConfirm = el('dn-confirm');
-  const archiveExpiredDnBtn = el('btn-archive-expired-dn');
 
   const editModalController = modalControllers?.edit || null;
   const authModalController = modalControllers?.auth || null;
@@ -583,11 +581,6 @@ export function setupAdminPage(
 
   function refreshDnEntryVisibility() {
     dnEntry.refreshVisibility();
-    if (!archiveExpiredDnBtn) return;
-    const visible = isTransportManagerRole();
-    archiveExpiredDnBtn.style.display = visible ? '' : 'none';
-    archiveExpiredDnBtn.setAttribute('aria-hidden', visible ? 'false' : 'true');
-    archiveExpiredDnBtn.disabled = !visible;
   }
 
   function applyLspSummaryCardFilter(lspName) {
@@ -1447,110 +1440,6 @@ export function setupAdminPage(
   const exportRecordsBtn = el('btn-export-records');
   bindAsyncButtonClick(exportRecordsBtn, exportUpdateRecords, { signal });
 
-  const syncSheetBtn = el('btn-sync-google-sheet');
-  bindAsyncButtonClick(syncSheetBtn, async () => {
-    if (!syncSheetBtn) return;
-    try {
-      const { resp, message: responseMessage } = await fetchWithPayload(
-        `${API_BASE}/api/dn/sync`,
-        { method: 'GET' }
-      );
-      if (!resp.ok) {
-        const baseError = i18n?.t('actions.syncGoogleSheetError') || '同步失败';
-        const errorMessage = responseMessage
-          ? i18n?.t('actions.syncGoogleSheetErrorWithMsg', { msg: responseMessage }) ||
-            `${baseError}：${responseMessage}`
-          : baseError;
-        showToast(errorMessage, 'error');
-        return;
-      }
-
-      const baseSuccess =
-        i18n?.t('actions.syncGoogleSheetSuccess') || '已触发 Google Sheet 数据更新';
-      const successMessage = responseMessage
-        ? i18n?.t('actions.syncGoogleSheetSuccessWithMsg', { msg: responseMessage }) ||
-          `${baseSuccess}：${responseMessage}`
-        : baseSuccess;
-      showToast(successMessage, 'success');
-    } catch (err) {
-      const fallbackError = i18n?.t('actions.syncGoogleSheetError') || '同步失败';
-      const message = err?.message || err;
-      const composed = message
-        ? i18n?.t('actions.syncGoogleSheetErrorWithMsg', { msg: message }) ||
-          `${fallbackError}：${message}`
-        : fallbackError;
-      showToast(composed, 'error');
-    }
-  }, { signal });
-
-  bindAsyncButtonClick(
-    archiveExpiredDnBtn,
-    async () => {
-      if (!archiveExpiredDnBtn) return;
-      try {
-        const { resp, data, message: responseMessage } = await fetchWithPayload(
-          `${API_BASE}/api/dn/archive/mark`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ threshold_days: ARCHIVE_THRESHOLD_DAYS }),
-          }
-        );
-
-        if (!resp.ok || (data && data.ok === false)) {
-          const baseError =
-            i18n?.t('actions.archiveExpiredDnError') || '归档过期 DN 标记失败';
-          const errorMessage = responseMessage
-            ? i18n?.t('actions.archiveExpiredDnErrorWithMsg', { msg: responseMessage }) ||
-              `${baseError}：${responseMessage}`
-            : baseError;
-          showToast(errorMessage, 'error');
-          return;
-        }
-
-        const rawMatchedRows = data?.data?.matched_rows;
-        let matchedCount = null;
-        if (typeof rawMatchedRows === 'number' && Number.isFinite(rawMatchedRows)) {
-          matchedCount = rawMatchedRows;
-        } else if (typeof rawMatchedRows === 'string') {
-          const parsed = Number(rawMatchedRows);
-          if (Number.isFinite(parsed)) matchedCount = parsed;
-        }
-
-        const baseSuccess =
-          i18n?.t('actions.archiveExpiredDnSuccess') || '已触发归档过期 DN 标记任务';
-        let successMessage = baseSuccess;
-        if (matchedCount !== null) {
-          successMessage =
-            i18n?.t('actions.archiveExpiredDnSuccessWithCount', { count: matchedCount }) ||
-            `${baseSuccess}，匹配 ${matchedCount} 条记录`;
-        } else if (responseMessage) {
-          successMessage =
-            i18n?.t('actions.archiveExpiredDnSuccessWithMsg', { msg: responseMessage }) ||
-            `${baseSuccess}：${responseMessage}`;
-        }
-
-        showToast(successMessage, 'success');
-      } catch (err) {
-        const fallbackError =
-          i18n?.t('actions.archiveExpiredDnError') || '归档过期 DN 标记失败';
-        const message = err?.message || err;
-        const composed = message
-          ? i18n?.t('actions.archiveExpiredDnErrorWithMsg', { msg: message }) ||
-            `${fallbackError}：${message}`
-          : fallbackError;
-        showToast(composed, 'error');
-      }
-    },
-    {
-      signal,
-      onFinally: () => {
-        if (archiveExpiredDnBtn) {
-          archiveExpiredDnBtn.disabled = !isTransportManagerRole();
-        }
-      },
-    }
-  );
 
   el('btn-trust-backend-link')?.addEventListener(
     'click',
