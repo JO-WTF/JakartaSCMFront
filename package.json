@@ -15,6 +15,7 @@
     "compressorjs": "^1.2.1",
     "dayjs": "^1.11.18",
     "echarts": "^6.0.0",
+    "html2pdf.js": "^0.12.1",
     "libphonenumber-js": "^1.12.23",
     "mapbox-gl": "^3.15.0",
     "toastify-js": "1.12.0",

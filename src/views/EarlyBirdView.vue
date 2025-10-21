@@ -72,6 +72,13 @@
           <a-button :disabled="loading" @click="resetToDefaults">
             {{ t('filters.reset') }}
           </a-button>
+          <a-button
+            :loading="exportPdfLoading"
+            :disabled="loading || exportPdfLoading || !cardItems.length"
+            @click="handleExportPdf"
+          >
+            {{ t('filters.exportPdf') }}
+          </a-button>
         </div>
       </div>
       <p class="filters-hint">{{ t('filters.hint') }}</p>
@@ -182,6 +189,7 @@ const lspFilter = ref([]);
 const regionOptions = ref([]);
 const areaOptions = ref([]);
 const lspOptions = ref([]);
+const exportPdfLoading = ref(false);
 
 const apiBase = getApiBase();
 const mapboxToken = getMapboxAccessToken();
@@ -282,6 +290,22 @@ const openPhoto = (url) => {
   }
 };
 
+const buildQueryParams = (start, end) => {
+  const params = new URLSearchParams();
+  params.set('start_date', start);
+  params.set('end_date', end);
+  const appendValues = (values, key) => {
+    values.forEach((value) => {
+      const normalized = String(value || '').trim();
+      if (normalized) params.append(key, normalized);
+    });
+  };
+  appendValues(regionFilter.value, 'region');
+  appendValues(areaFilter.value, 'area');
+  appendValues(lspFilter.value, 'lsp');
+  return params;
+};
+
 const fetchData = async () => {
   const start = formatDateForApi(startDate.value);
   const end = formatDateForApi(endDate.value);
@@ -299,18 +323,7 @@ const fetchData = async () => {
   try {
     const base = (apiBase || '').replace(/\/+$/, '');
     const requestBase = base ? `${base}/api/dn/list/early-bird` : '/api/dn/list/early-bird';
-    const params = new URLSearchParams();
-    params.set('start_date', start);
-    params.set('end_date', end);
-    regionFilter.value.forEach((value) => {
-      if (value) params.append('region', value);
-    });
-    areaFilter.value.forEach((value) => {
-      if (value) params.append('area', value);
-    });
-    lspFilter.value.forEach((value) => {
-      if (value) params.append('lsp', value);
-    });
+    const params = buildQueryParams(start, end);
     const requestUrl = `${requestBase}?${params.toString()}`;
     const { resp, data, message } = await fetchWithPayload(requestUrl, { method: 'GET' });
     if (!resp.ok) {
@@ -375,6 +388,66 @@ const applyFilterOptions = (payload = {}) => {
   regionOptions.value = buildSelectOptions(payload?.region, regionFilter.value);
   areaOptions.value = buildSelectOptions(payload?.area, areaFilter.value);
   lspOptions.value = buildSelectOptions(payload?.lsp, lspFilter.value);
+};
+
+const handleExportPdf = async () => {
+  const start = formatDateForApi(startDate.value);
+  const end = formatDateForApi(endDate.value);
+  if (!start || !end) {
+    showToast(t('errors.missingRange'), 'error');
+    return;
+  }
+  if (dayjs(start).isAfter(dayjs(end))) {
+    showToast(t('errors.invalidRange'), 'error');
+    return;
+  }
+  if (!cardItems.value.length) {
+    showToast(t('errors.noDataToExport'), 'error');
+    return;
+  }
+
+  exportPdfLoading.value = true;
+  try {
+    const base = (apiBase || '').replace(/\/+$/, '');
+    const requestBase = base ? `${base}/api/dn/early-bird/export` : '/api/dn/early-bird/export';
+    const params = buildQueryParams(start, end);
+    const requestUrl = `${requestBase}?${params.toString()}`;
+    const resp = await fetch(requestUrl, { method: 'GET' });
+    if (!resp.ok) {
+      const errorText = await resp.text();
+      throw new Error(errorText || t('errors.exportFailed'));
+    }
+    const blob = await resp.blob();
+    if (!blob || !blob.size) {
+      throw new Error(t('errors.exportFailed'));
+    }
+    let fileName = `early-bird-${start}-to-${end}.pdf`;
+    const disposition = resp.headers.get('content-disposition');
+    if (disposition) {
+      const match = disposition.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i);
+      const rawName = match?.[1] || match?.[2];
+      if (rawName) {
+        try {
+          fileName = decodeURIComponent(rawName);
+        } catch (_err) {
+          fileName = rawName;
+        }
+      }
+    }
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    const message = err?.message || t('errors.exportFailed');
+    showToast(message, 'error');
+  } finally {
+    exportPdfLoading.value = false;
+  }
 };
 
 const fetchFilterOptions = async () => {
@@ -457,6 +530,15 @@ const cardItems = computed(() => {
       photoFull,
       photoThumb: photoFull,
       details,
+      regionDisplay: item?.region || '',
+      areaDisplay: item?.area || '',
+      lspDisplay: item?.lsp || item?.lsp_name || '',
+      planMosDateDisplay: planMosDateRaw,
+      arrivalStatusDisplay: item?.arrival_status || '',
+      arrivedAtDisplay,
+      cutoffDisplay,
+      updatedByDisplay: item?.record_updated_by || '',
+      phoneDisplay: item?.record_phone_number || '',
     };
   });
 });

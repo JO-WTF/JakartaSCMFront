@@ -4,6 +4,7 @@
   "filters.endDate": "End Date",
   "filters.fetch": "Fetch",
   "filters.reset": "Reset",
+  "filters.exportPdf": "Export PDF",
   "filters.hint": "Select a date range to query the Early Bird list.",
   "filters.region": "Region",
   "filters.area": "Area",
@@ -29,6 +30,8 @@
   "errors.missingRange": "Please select both start and end dates.",
   "errors.invalidRange": "Start date cannot be later than end date.",
   "errors.fetchFailed": "Failed to load Early Bird data.",
+  "errors.exportFailed": "Failed to export Early Bird PDF.",
+  "errors.noDataToExport": "No data available to export.",
   "map.unavailable": "Map preview unavailable",
   "map.alt": "Map preview for {lat}, {lng}",
   "photo.preview": "Preview photo"

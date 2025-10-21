@@ -4,6 +4,7 @@
   "filters.endDate": "Tanggal Selesai",
   "filters.fetch": "Cari",
   "filters.reset": "Atur Ulang",
+  "filters.exportPdf": "Ekspor PDF",
   "filters.hint": "Pilih rentang tanggal lalu jalankan pencarian data Early Bird.",
   "filters.region": "Wilayah",
   "filters.area": "Area",
@@ -29,6 +30,8 @@
   "errors.missingRange": "Silakan pilih tanggal mulai dan selesai.",
   "errors.invalidRange": "Tanggal mulai tidak boleh setelah tanggal selesai.",
   "errors.fetchFailed": "Gagal memuat data Early Bird.",
+  "errors.exportFailed": "Gagal mengekspor PDF Early Bird.",
+  "errors.noDataToExport": "Tidak ada data untuk diekspor.",
   "map.unavailable": "Pratinjau peta tidak tersedia",
   "map.alt": "Pratinjau peta untuk {lat}, {lng}",
   "photo.preview": "Lihat foto"

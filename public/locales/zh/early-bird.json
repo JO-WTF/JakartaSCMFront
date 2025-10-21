@@ -4,6 +4,7 @@
   "filters.endDate": "结束日期",
   "filters.fetch": "查询",
   "filters.reset": "重置",
+  "filters.exportPdf": "导出 PDF",
   "filters.hint": "请选择日期范围后点击查询 Early Bird 数据。",
   "filters.region": "区域",
   "filters.area": "Area",
@@ -29,6 +30,8 @@
   "errors.missingRange": "请同时选择开始日期和结束日期。",
   "errors.invalidRange": "开始日期不能晚于结束日期。",
   "errors.fetchFailed": "Early Bird 数据加载失败。",
+  "errors.exportFailed": "导出 Early Bird PDF 失败。",
+  "errors.noDataToExport": "暂无可导出的数据。",
   "map.unavailable": "无法显示地图预览",
   "map.alt": "地图预览（{lat}, {lng}）",
   "photo.preview": "查看照片"
