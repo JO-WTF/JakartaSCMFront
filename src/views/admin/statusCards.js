@@ -237,10 +237,10 @@ export function createStatusDeliveryCardManager({
       if (String(defItem.status_delivery || '').toLowerCase() === 'total' || String(defItem.label || '').toLowerCase() === 'total') {
         btn.classList.add('status-card--total');
       }
-      // Map ARRIVED_AT_SITE and POD explicitly to green (override progress mapping)
+      // Map ARRIVED_AT_XD_PM, ARRIVED_AT_SITE and POD explicitly to green (override progress mapping)
       const sd = String(defItem.status_delivery || '');
-      if (sd && (sd === STATUS_DELIVERY_VALUES.ARRIVED_AT_SITE || sd === STATUS_DELIVERY_VALUES.POD)) {
-        btn.classList.add('status-card--progress-4');
+      if (sd && (sd === STATUS_DELIVERY_VALUES.ARRIVED_AT_XD_PM || sd === STATUS_DELIVERY_VALUES.ARRIVED_AT_SITE || sd === STATUS_DELIVERY_VALUES.POD)) {
+        btn.classList.add('status-card--arrived');
       }
       // No Status should be red
       if (sd && sd === STATUS_DELIVERY_VALUES.NO_STATUS) {

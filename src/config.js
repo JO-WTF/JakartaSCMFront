@@ -145,7 +145,15 @@ const ROLE_USER_PREFIXES = {
 };
 
 export const STATUS_DELIVERY_VALUES = buildValueMap(STATUS_DELIVERY_DEFINITIONS);
-export const STATUS_DELIVERY_ORDERED_LIST = buildList(STATUS_DELIVERY_DEFINITIONS);
+export const STATUS_DELIVERY_ORDERED_LIST = [
+  "ARRIVED AT WH",
+  "DEPARTED FROM WH",
+  "DEPARTED FROM XD/PM",
+  "ARRIVED AT XD/PM",
+  "ARRIVED AT SITE",
+  "POD",
+  "No Status"
+]
 export const STATUS_DELIVERY_ITEMS = Object.freeze(
   STATUS_DELIVERY_DEFINITIONS.map(({ key, value, translationKey }) => {
     return {
