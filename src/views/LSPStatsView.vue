@@ -19,6 +19,11 @@
             <RadioButton value="status_not_empty">更新数</RadioButton>
             <RadioButton value="total_dn">总数</RadioButton>
           </RadioGroup>
+          <div class="chart-options">
+            <Checkbox v-model:checked="showDailyRateOnly" :disabled="metric !== 'rate'">
+              仅显示日级别打卡率
+            </Checkbox>
+          </div>
         </div>
       </div>
       <div class="chart-wrapper" v-if="dateMode !== 'driver'">
@@ -64,7 +69,7 @@
 
 <script setup>
 import { ref, onMounted, watch, computed, nextTick } from 'vue';
-import { Table, RadioGroup, RadioButton } from 'ant-design-vue';
+import { Table, RadioGroup, RadioButton, Checkbox } from 'ant-design-vue';
 import { getApiBase } from '../utils/env';
 
 const chartContainer = ref(null);
@@ -80,6 +85,7 @@ const totalDrivers = ref(0);
 const loadingDriverData = ref(false);
 const metric = ref('rate'); // 'rate' | 'status_not_empty' | 'total_dn'
 const dateMode = ref('plan'); // 'plan' | 'update' | 'driver'
+const showDailyRateOnly = ref(false);
 
 const apiBase = getApiBase();
 const buildRequestUrl = () => {
@@ -283,6 +289,7 @@ const valueFormatter = computed(() => {
 
 // 时间格式化
 const TIME_ZONE = 'Asia/Jakarta';
+const JAKARTA_OFFSET_MINUTES = 7 * 60;
 const fmtTime = (input) => {
   let millis;
   if (input instanceof Date) {
@@ -310,9 +317,21 @@ const fmtTime = (input) => {
   });
 };
 
+const isSixAmInJakarta = (time) => {
+  if (!Number.isFinite(time)) {
+    return false;
+  }
+
+  const adjusted = new Date(time + JAKARTA_OFFSET_MINUTES * 60 * 1000);
+  return adjusted.getUTCHours() === 6 && adjusted.getUTCMinutes() === 0;
+};
+
 // 准备图表数据
 const prepareChartData = () => {
-  const source = isPlanMode.value ? processedData.value : processedUpdateData.value;
+  let source = isPlanMode.value ? processedData.value : processedUpdateData.value;
+  if (isPlanMode.value && metric.value === 'rate' && showDailyRateOnly.value) {
+    source = source.filter((item) => isSixAmInJakarta(item.time));
+  }
   if (!source.length) {
     return { xAxisData: [], series: [] };
   }
@@ -495,6 +514,12 @@ watch(rawUpdate, () => {
     updateChart();
   }
 });
+
+watch(showDailyRateOnly, () => {
+  if (chartInstance && isEChartsLoaded) {
+    updateChart();
+  }
+});
 </script>
 
 <style scoped>
@@ -610,6 +635,8 @@ watch(rawUpdate, () => {
 .metric-toggle {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .metric-toggle :deep(.ant-radio-group-solid) {
@@ -619,6 +646,26 @@ watch(rawUpdate, () => {
   padding: 6px;
   border-radius: 12px;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.chart-options {
+  display: flex;
+  align-items: center;
+  color: #475569;
+  font-weight: 600;
+}
+
+.chart-options :deep(.ant-checkbox-inner) {
+  border-radius: 6px;
+}
+
+.chart-options :deep(.ant-checkbox-wrapper) {
+  color: inherit;
+  font-weight: inherit;
+}
+
+.chart-options :deep(.ant-checkbox-wrapper.ant-checkbox-wrapper-disabled) {
+  color: rgba(148, 163, 184, 0.8);
 }
 
 .metric-toggle :deep(.ant-radio-button-wrapper) {
@@ -704,6 +751,11 @@ watch(rawUpdate, () => {
 
   .metric-toggle :deep(.ant-radio-button-wrapper) {
     width: 100%;
+  }
+
+  .chart-options {
+    width: 100%;
+    margin-top: 12px;
   }
 
   .chart-wrapper {
