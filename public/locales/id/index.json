@@ -50,5 +50,9 @@
   "phoneConfirm": "Konfirmasi",
   "phoneInvalid": "Harap masukkan nomor yang valid, mis. 0812-3456-7890",
   "phoneNumberLabel": "Nomor Ponsel",
-  "phoneMissingToast": "Nomor ponsel tidak ditemukan. Silakan isi kembali."
+  "phoneMissingToast": "Nomor ponsel tidak ditemukan. Silakan isi kembali.",
+  "driverNameLabel": "Nama Pengemudi",
+  "driverNamePlaceholder": "Masukkan nama pengemudi",
+  "driverNameMissingToast": "Nama pengemudi wajib diisi. Harap lengkapi.",
+  "clearInput": "Hapus"
 }

@@ -50,5 +50,9 @@
   "phoneConfirm": "确认",
   "phoneInvalid": "请输入正确的号码，示例：0812-3456-7890",
   "phoneNumberLabel": "手机号",
-  "phoneMissingToast": "未找到手机号，请重新填写。"
+  "phoneMissingToast": "未找到手机号，请重新填写。",
+  "driverNameLabel": "司机姓名",
+  "driverNamePlaceholder": "请输入司机姓名",
+  "driverNameMissingToast": "请填写司机姓名。",
+  "clearInput": "清空"
 }

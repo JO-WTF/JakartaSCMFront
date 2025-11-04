@@ -112,6 +112,33 @@
             <p>{{ t('locationWarningNote') }}</p>
           </div>
 
+          <div class="driver-field-group">
+            <div class="driver-field">
+              <label for="driverNameInput">{{ t('driverNameLabel') }}</label>
+              <div class="driver-input-row">
+                <input id="driverNameInput" v-model="state.driverName" type="text" autocomplete="name"
+                  autocapitalize="words" :placeholder="t('driverNamePlaceholder')" @blur="handleDriverNameBlur"
+                  @input="onDriverNameInput" :class="{ invalid: state.driverNameMissing }" />
+                <button v-if="state.driverName" type="button" class="clear-input-btn" @click="clearDriverName"
+                  :aria-label="t('clearInput')">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+            </div>
+            <div class="driver-field">
+              <label for="driverPhoneInput">{{ t('phoneNumberLabel') }}</label>
+              <div class="driver-input-row">
+                <input id="driverPhoneInput" v-model="state.driverPhone" type="tel" inputmode="tel" autocomplete="tel"
+                  :placeholder="t('phonePlaceholder')" @blur="handleDriverPhoneBlur" @input="onDriverPhoneInput"
+                  :class="{ invalid: state.driverPhoneMissing }" />
+                <button v-if="state.driverPhone" type="button" class="clear-input-btn" @click="clearDriverPhone"
+                  :aria-label="t('clearInput')">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <button class="primary" style="align-self: flex-start" @click="submitUpdate"
             :disabled="!state.isValid || state.submitting">
             {{ state.submitting ? t('submitting') : t('submit') }}
@@ -171,9 +198,11 @@ import { createScanner } from '../composables/useScanner';
 import '../assets/css/scan.css';
 import { isValidDn } from '../utils/dn.js';
 import { STATUS_DELIVERY_ITEMS, STATUS_DELIVERY_VALUES, STATUS_SITE_ORDERED_LIST } from '../config.js';
-import { getCookie } from '../utils/cookie.js';
+import { getCookie, setCookie } from '../utils/cookie.js';
 
 const PHONE_COOKIE_KEY = 'phone_number';
+const DRIVER_NAME_STORAGE_KEY = 'scan_driver_name';
+const PHONE_STORAGE_KEY = 'phone_number';
 
 const _i18n = await useI18n({ namespaces: ['core', 'index'], fallbackLang: 'id', defaultLang: 'id' });
 
@@ -185,10 +214,46 @@ const { getStoredUserName } = useAuth();
 const { isMobile: isMobileClient, browserId: browserIdentifier } = useDeviceDetection();
 const router = useRouter();
 const phoneNumber = ref(getCookie(PHONE_COOKIE_KEY) || '');
+const storedUserNameRef = ref('');
+const isLoggedIn = computed(() => !!storedUserNameRef.value);
+
+const safeGetLocalStorageItem = (key) => {
+  if (typeof window === 'undefined' || !window.localStorage || !key) return '';
+  try {
+    return window.localStorage.getItem(key) || '';
+  } catch {
+    return '';
+  }
+};
+
+const safeSetLocalStorageItem = (key, value) => {
+  if (typeof window === 'undefined' || !window.localStorage || !key) return;
+  try {
+    if (value) {
+      window.localStorage.setItem(key, value);
+    } else {
+      window.localStorage.removeItem(key);
+    }
+  } catch {
+    // ignore write errors (private mode, etc.)
+  }
+};
 
 const refreshPhoneNumber = () => {
+  const localPhone = safeGetLocalStorageItem(PHONE_STORAGE_KEY);
+  if (localPhone) {
+    phoneNumber.value = localPhone;
+    const currentCookie = getCookie(PHONE_COOKIE_KEY);
+    if (localPhone !== currentCookie) {
+      setCookie(PHONE_COOKIE_KEY, localPhone, 365);
+    }
+    return phoneNumber.value;
+  }
   const stored = getCookie(PHONE_COOKIE_KEY);
   phoneNumber.value = stored || '';
+  if (phoneNumber.value) {
+    safeSetLocalStorageItem(PHONE_STORAGE_KEY, phoneNumber.value);
+  }
   return phoneNumber.value;
 };
 
@@ -198,6 +263,8 @@ const state = reactive({
   locationError: false,
   hasDN: false,
   dnNumber: '',
+  driverName: '',
+  driverPhone: '',
   dnStatusSite: '',
   dnStatusDelivery: '',
   remark: '',
@@ -215,6 +282,8 @@ const state = reactive({
   showResult: false,
   submitView: {},
   uploadPct: 0,
+  driverNameMissing: false,
+  driverPhoneMissing: false,
 });
 
 // 使用版本号强制响应式更新
@@ -245,16 +314,21 @@ const submitSummaryRows = computed(() => {
       mono: true,
     },
     {
+      key: 'driverName',
+      label: t('driverNameLabel'),
+      value: formatResultText(view.driverName || view.updatedBy),
+    },
+    {
       key: 'dnNumber',
       label: t('dnNumberLabel'),
       value: formatResultText(view.dnNumber),
       mono: true,
     },
-      {
-        key: 'status_delivery',
-        label: t('statusLabel'),
-        value: formatResultText(statusLabel(view.status_delivery)),
-      },
+    {
+      key: 'status_delivery',
+      label: t('statusLabel'),
+      value: formatResultText(statusLabel(view.status_delivery)),
+    },
     {
       key: 'status_site',
       label: t('statusSiteLabel'),
@@ -508,6 +582,66 @@ const formatCoordinate = (val) => {
   return formatResultText(val);
 };
 
+const persistPhoneNumber = (value) => {
+  const trimmed = (value || '').trim();
+  phoneNumber.value = trimmed;
+  if (!isLoggedIn.value) {
+    safeSetLocalStorageItem(PHONE_STORAGE_KEY, trimmed);
+  }
+  setCookie(PHONE_COOKIE_KEY, trimmed, 365);
+};
+
+const persistDriverName = (value) => {
+  if (isLoggedIn.value) return;
+  const trimmed = (value || '').trim();
+  safeSetLocalStorageItem(DRIVER_NAME_STORAGE_KEY, trimmed);
+};
+
+const handleDriverPhoneBlur = () => {
+  const trimmed = (state.driverPhone || '').trim();
+  state.driverPhone = trimmed;
+  if (!trimmed) {
+    if (!isLoggedIn.value) {
+      persistPhoneNumber('');
+    }
+    return;
+  }
+  state.driverPhoneMissing = false;
+  persistPhoneNumber(trimmed);
+};
+
+const handleDriverNameBlur = () => {
+  state.driverName = (state.driverName || '').trim();
+  if (state.driverName) {
+    state.driverNameMissing = false;
+  }
+  if (!isLoggedIn.value) {
+    persistDriverName(state.driverName);
+  }
+};
+
+const onDriverNameInput = () => {
+  if (state.driverNameMissing && state.driverName?.trim()) {
+    state.driverNameMissing = false;
+  }
+};
+
+const onDriverPhoneInput = () => {
+  if (state.driverPhoneMissing && state.driverPhone?.trim()) {
+    state.driverPhoneMissing = false;
+  }
+};
+
+const clearDriverName = () => {
+  state.driverName = '';
+  state.driverNameMissing = false;
+};
+
+const clearDriverPhone = () => {
+  state.driverPhone = '';
+  state.driverPhoneMissing = false;
+};
+
 // resolveClientProfile, getStoredUserName, uploadWithProgress 现在来自 composables
 
 const submitUpdate = async () => {
@@ -528,27 +662,53 @@ const submitUpdate = async () => {
     return;
   }
 
-  state.submitting = true;
-  state.uploadPct = 0;
-  state.submitMsg = '';
-  state.submitOk = false;
+  const driverNameForSubmit = (state.driverName || '').trim();
+  state.driverName = driverNameForSubmit;
+  if (!driverNameForSubmit) {
+    state.driverNameMissing = true;
+    Toastify({
+      text: t('driverNameMissingToast') || 'Driver name required',
+      duration: 2500,
+      gravity: 'bottom',
+      position: 'center',
+    }).showToast();
+    return;
+  }
 
-  const currentPhone = refreshPhoneNumber();
-
-  if (!currentPhone) {
-    state.submitting = false;
+  const inputPhone = (state.driverPhone || '').trim();
+  state.driverPhone = inputPhone;
+  if (!inputPhone) {
+    state.driverPhoneMissing = true;
     Toastify({
       text: t('phoneMissingToast'),
       duration: 2500,
       gravity: 'bottom',
       position: 'center',
     }).showToast();
-    await router.replace({ name: 'phone', query: { redirect: '/' } });
     return;
   }
 
+  state.driverNameMissing = false;
+  state.driverPhoneMissing = false;
+
+  persistDriverName(driverNameForSubmit);
+  persistPhoneNumber(inputPhone);
+
+  state.submitting = true;
+  state.uploadPct = 0;
+  state.submitMsg = '';
+  state.submitOk = false;
+
+  const currentPhone = inputPhone;
+
   try {
     const API_BASE = getApiBase();
+    let storedUserName = storedUserNameRef.value;
+    if (!storedUserName) {
+      storedUserName = getStoredUserName() || '';
+      storedUserNameRef.value = storedUserName;
+    }
+    const updatedBy = driverNameForSubmit || storedUserName || (isMobileClient ? 'driver' : browserIdentifier);
 
     if (!API_BASE) {
       await new Promise((r) => setTimeout(r, 300));
@@ -559,9 +719,11 @@ const submitUpdate = async () => {
       state.submitView = {
         phoneNumber: currentPhone,
         dnNumber: state.dnNumber,
-      status_delivery: state.dnStatusDelivery,
+        status_delivery: state.dnStatusDelivery,
         status_site: state.dnStatusSite,
         remark: state.remark,
+        updatedBy,
+        driverName: driverNameForSubmit,
         photo: state.photoPreview || null,
         lng: state.location?.lng,
         lat: state.location?.lat,
@@ -575,14 +737,13 @@ const submitUpdate = async () => {
 
     const fd = new FormData();
     fd.append('dnNumber', state.dnNumber);
-  fd.append('status_delivery', state.dnStatusDelivery ?? '');
+    fd.append('status_delivery', state.dnStatusDelivery ?? '');
     fd.append('status_site', state.dnStatusSite ?? '');
     fd.append('remark', state.remark ?? '');
     fd.append('lng', state.location?.lng ?? '');
     fd.append('lat', state.location?.lat ?? '');
-  fd.append('phone_number', currentPhone);
-    const storedUserName = getStoredUserName();
-    fd.append('updated_by', storedUserName || (isMobileClient ? 'driver' : browserIdentifier));
+    fd.append('phone_number', currentPhone);
+    fd.append('updated_by', updatedBy);
 
     if (state.photoFile instanceof File) {
       fd.append('photo', state.photoFile, state.photoFile.name || 'photo');
@@ -608,9 +769,11 @@ const submitUpdate = async () => {
     state.submitView = {
       phoneNumber: currentPhone,
       dnNumber: state.dnNumber,
-  status_delivery: state.dnStatusDelivery,
-        status_site: state.dnStatusSite,
+      status_delivery: state.dnStatusDelivery,
+      status_site: state.dnStatusSite,
       remark: state.remark,
+      updatedBy,
+      driverName: driverNameForSubmit,
       photo: state.photoPreview || null,
       lng: state.location?.lng,
       lat: state.location?.lat,
@@ -701,6 +864,7 @@ const setLang = async (lang) => {
 };
 
 onMounted(async () => {
+  storedUserNameRef.value = getStoredUserName() || '';
   const currentPhone = refreshPhoneNumber();
   if (!currentPhone) {
     const redirectTo = router.currentRoute?.value?.fullPath || '/';
@@ -708,10 +872,22 @@ onMounted(async () => {
     return;
   }
 
-  const storedUserName = getStoredUserName();
-  if (storedUserName) {
+  if (!isLoggedIn.value) {
+    const savedDriverName = safeGetLocalStorageItem(DRIVER_NAME_STORAGE_KEY);
+    state.driverName = savedDriverName;
+    const savedPhone = safeGetLocalStorageItem(PHONE_STORAGE_KEY) || currentPhone;
+    state.driverPhone = savedPhone;
+    if (state.driverPhone) {
+      persistPhoneNumber(state.driverPhone);
+    }
+  } else {
+    state.driverName = '';
+    state.driverPhone = '';
+  }
+
+  if (storedUserNameRef.value) {
     Toastify({
-      text: `You are logged in as ${storedUserName}.`,
+      text: `You are logged in as ${storedUserNameRef.value}.`,
       duration: 3000,
       gravity: 'bottom',
       position: 'center',
@@ -757,5 +933,82 @@ onBeforeUnmount(async () => {
 <style scoped>
 .scan-view {
   padding-bottom: 40px;
+}
+
+.driver-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  margin-bottom: 12px;
+}
+
+.driver-input-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.driver-field label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.driver-field input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  background: rgba(8, 14, 34, 0.45);
+  color: inherit;
+  font-size: 15px;
+  line-height: 1.45;
+  padding-right: 36px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  flex: 1;
+}
+
+.driver-field input::placeholder {
+  color: rgba(234, 242, 255, 0.5);
+}
+
+.driver-field input:focus {
+  outline: none;
+  border-color: rgba(99, 179, 237, 0.75);
+  box-shadow: 0 0 0 1px rgba(99, 179, 237, 0.32);
+  background: rgba(15, 28, 58, 0.75);
+}
+
+.driver-field input.invalid {
+  border-color: rgba(239, 68, 68, 0.85);
+  box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.4);
+  background: rgba(56, 10, 10, 0.45);
+}
+
+.clear-input-btn {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.clear-input-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(1.05);
+}
+
+.clear-input-btn span {
+  line-height: 1;
+  font-size: 16px;
 }
 </style>

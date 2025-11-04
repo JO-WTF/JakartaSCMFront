@@ -50,5 +50,9 @@
   "phoneConfirm": "Confirm",
   "phoneInvalid": "Please enter a valid number, e.g. 0812-3456-7890",
   "phoneNumberLabel": "Phone Number",
-  "phoneMissingToast": "Phone number missing. Please enter it again."
+  "phoneMissingToast": "Phone number missing. Please enter it again.",
+  "driverNameLabel": "Driver Name",
+  "driverNamePlaceholder": "Enter driver name",
+  "driverNameMissingToast": "Driver name is required. Please fill it in.",
+  "clearInput": "Clear"
 }
