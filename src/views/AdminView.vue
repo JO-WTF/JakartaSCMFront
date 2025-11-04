@@ -618,6 +618,29 @@
             <input id="m-photo" type="file" accept="image/*" />
           </div>
         </div>
+        <div class="row-line">
+          <div class="field" id="m-driver-name-field">
+            <label data-i18n="modal.driver_name.label">司机姓名</label>
+            <input
+              id="m-driver-name"
+              type="text"
+              data-i18n-placeholder="modal.driver_name.placeholder"
+              placeholder="请输入司机姓名"
+              autocomplete="name"
+            />
+          </div>
+          <div class="field" id="m-driver-phone-field">
+            <label data-i18n="modal.driver_phone.label">司机电话</label>
+            <input
+              id="m-driver-phone"
+              type="tel"
+              inputmode="tel"
+              data-i18n-placeholder="modal.driver_phone.placeholder"
+              placeholder="请输入司机电话"
+              autocomplete="tel"
+            />
+          </div>
+        </div>
         <div class="foot">
           <button class="btn ghost" id="m-cancel" data-i18n="modal.cancel">取消</button>
           <button class="btn" id="m-save" data-i18n="modal.save">保存</button>

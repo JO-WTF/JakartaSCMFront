@@ -126,10 +126,33 @@ export function setupAdminPage(
   const mRemarkField = el('m-remark-field');
   const mPhoto = el('m-photo');
   const mPhotoField = el('m-photo-field');
+  const mDriverName = el('m-driver-name');
+  const mDriverNameField = el('m-driver-name-field');
+  const mDriverPhone = el('m-driver-phone');
+  const mDriverPhoneField = el('m-driver-phone-field');
   const mMsg = el('m-msg');
   const filtersGrid = el('filters-grid');
   const filtersToggle = el('filters-toggle');
   const filtersOverlayTarget = filtersGrid ? filtersGrid.closest('.dn-col2') : null;
+
+  mDriverName?.addEventListener(
+    'input',
+    () => {
+      if (mDriverName.value && mDriverName.value.trim()) {
+        mDriverName.classList.remove('invalid-field');
+      }
+    },
+    { signal }
+  );
+  mDriverPhone?.addEventListener(
+    'input',
+    () => {
+      if (mDriverPhone.value && mDriverPhone.value.trim()) {
+        mDriverPhone.classList.remove('invalid-field');
+      }
+    },
+    { signal }
+  );
 
   const authBtn = el('btn-auth');
   const authCancel = el('auth-cancel');
@@ -492,6 +515,7 @@ export function setupAdminPage(
     const allowRemark = Boolean(perms?.allowRemark);
     const allowPhoto = Boolean(perms?.allowPhoto);
     const allowStatusSite = Boolean(perms?.canEdit);
+    const allowDriverContact = Boolean(perms?.canEdit);
 
     if (mStatusSiteField) {
       mStatusSiteField.style.display = allowStatusSite ? '' : 'none';
@@ -520,6 +544,25 @@ export function setupAdminPage(
         } catch (err) {
           console.error(err);
         }
+      }
+    }
+
+    if (mDriverNameField) {
+      mDriverNameField.style.display = allowDriverContact ? '' : 'none';
+    }
+    if (mDriverName) {
+      mDriverName.disabled = !allowDriverContact;
+      if (!allowDriverContact) {
+        mDriverName.value = '';
+      }
+    }
+    if (mDriverPhoneField) {
+      mDriverPhoneField.style.display = allowDriverContact ? '' : 'none';
+    }
+    if (mDriverPhone) {
+      mDriverPhone.disabled = !allowDriverContact;
+      if (!allowDriverContact) {
+        mDriverPhone.value = '';
       }
     }
   }
@@ -951,6 +994,26 @@ export function setupAdminPage(
       const remarkVal = item.remark ? String(item.remark) : '';
       mRemark.value = perms.allowRemark ? remarkVal : '';
     }
+    if (mDriverName) {
+      const driverNameVal = normalizeTextValue(
+        item.driver_name ??
+        item.driver_contact_name ??
+        item.driverName ??
+        ''
+      );
+      mDriverName.value = driverNameVal;
+      mDriverName.classList.remove('invalid-field');
+    }
+    if (mDriverPhone) {
+      const driverPhoneVal = normalizeTextValue(
+        item.phone_number ??
+        item.driver_contact_number ??
+        item.driverPhone ??
+        ''
+      );
+      mDriverPhone.value = driverPhoneVal;
+      mDriverPhone.classList.remove('invalid-field');
+    }
     if (mPhoto) {
       try {
         mPhoto.value = '';
@@ -981,6 +1044,14 @@ export function setupAdminPage(
     editingItem = null;
     if (mStatusSite) {
       setFormControlValue(mStatusSite, '');
+    }
+    if (mDriverName) {
+      mDriverName.value = '';
+      mDriverName.classList.remove('invalid-field');
+    }
+    if (mDriverPhone) {
+      mDriverPhone.value = '';
+      mDriverPhone.classList.remove('invalid-field');
     }
   }
 
@@ -1055,6 +1126,8 @@ export function setupAdminPage(
     const statusSiteVal =
       normalizeStatusDeliveryValue(statusSiteRaw) || statusSiteRaw;
     const remarkVal = perms?.allowRemark ? (mRemark?.value || '').trim() : '';
+    const driverNameVal = (mDriverName?.value || '').trim();
+    const driverPhoneVal = (mDriverPhone?.value || '').trim();
     const allowPhoto = perms?.allowPhoto && mPhoto?.files && mPhoto.files[0];
     const currentItem = editingItem || null;
     const dnNumber = (currentItem?.dn_number || currentItem?.dnNumber || '').trim();
@@ -1063,7 +1136,7 @@ export function setupAdminPage(
     }
 
     const resolvedUser = getEffectiveUserInfo();
-    const updatedBy = (resolvedUser?.name || '').trim();
+    const updatedBy = driverNameVal || (resolvedUser?.name || '').trim();
     form.set('updated_by', updatedBy);
 
     const originalStatusRaw = currentItem?.status_delivery || currentItem?.status || '';
@@ -1079,6 +1152,10 @@ export function setupAdminPage(
     const statusSiteToSubmit = statusSiteVal || originalStatusSite;
     form.set('status_site', statusSiteToSubmit || '');
     if (remarkVal) form.set('remark', remarkVal);
+    form.set('driver_name', driverNameVal);
+    form.set('driver_contact_name', driverNameVal);
+    form.set('phone_number', driverPhoneVal);
+    form.set('driver_contact_number', driverPhoneVal);
     if (allowPhoto) {
       form.set('photo', mPhoto.files[0]);
     }
@@ -1087,6 +1164,8 @@ export function setupAdminPage(
       statusDeliveryVal,
       statusSiteVal,
       remarkVal,
+      driverNameVal,
+      driverPhoneVal,
       allowPhoto,
       dnNumber,
       statusDeliveryToSubmit,
@@ -1103,6 +1182,26 @@ export function setupAdminPage(
           : '当前角色无权编辑该记录';
       return false;
     }
+
+    if (!payload.driverNameVal) {
+      if (mMsg)
+        mMsg.textContent = i18n
+          ? i18n.t('modal.driver_name.required')
+          : '司机姓名不能为空。';
+      mDriverName?.classList?.add('invalid-field');
+      return false;
+    }
+    mDriverName?.classList?.remove('invalid-field');
+
+    if (!payload.driverPhoneVal) {
+      if (mMsg)
+        mMsg.textContent = i18n
+          ? i18n.t('modal.driver_phone.required')
+          : '司机电话不能为空。';
+      mDriverPhone?.classList?.add('invalid-field');
+      return false;
+    }
+    mDriverPhone?.classList?.remove('invalid-field');
 
     if (!payload?.dnNumber) {
       if (mMsg) mMsg.textContent = '当前记录缺少 DN 号，无法保存。';
