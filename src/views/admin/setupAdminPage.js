@@ -1136,7 +1136,11 @@ export function setupAdminPage(
     }
 
     const resolvedUser = getEffectiveUserInfo();
-    const updatedBy = driverNameVal || (resolvedUser?.name || '').trim();
+    let updatedBy = driverNameVal;
+    const resolvedUserName = (resolvedUser?.name || '').trim();
+    if (resolvedUserName) {
+      updatedBy = `${driverNameVal} (by ${resolvedUserName})`;
+    }
     form.set('updated_by', updatedBy);
 
     const originalStatusRaw = currentItem?.status_delivery || currentItem?.status || '';
