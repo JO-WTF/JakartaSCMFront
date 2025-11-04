@@ -708,7 +708,13 @@ const submitUpdate = async () => {
       storedUserName = getStoredUserName() || '';
       storedUserNameRef.value = storedUserName;
     }
-    const updatedBy = driverNameForSubmit || storedUserName || (isMobileClient ? 'driver' : browserIdentifier);
+    let submissionDriverName = driverNameForSubmit;
+    if (storedUserName) {
+      submissionDriverName = `${driverNameForSubmit} (by ${storedUserName})`;
+    } else if (!isMobileClient && browserIdentifier) {
+      submissionDriverName = `${driverNameForSubmit} (by ${browserIdentifier})`;
+    }
+    const updatedBy = submissionDriverName || storedUserName || (isMobileClient ? 'driver' : browserIdentifier);
 
     if (!API_BASE) {
       await new Promise((r) => setTimeout(r, 300));
@@ -723,7 +729,7 @@ const submitUpdate = async () => {
         status_site: state.dnStatusSite,
         remark: state.remark,
         updatedBy,
-        driverName: driverNameForSubmit,
+        driverName: submissionDriverName,
         photo: state.photoPreview || null,
         lng: state.location?.lng,
         lat: state.location?.lat,
@@ -773,7 +779,7 @@ const submitUpdate = async () => {
       status_site: state.dnStatusSite,
       remark: state.remark,
       updatedBy,
-      driverName: driverNameForSubmit,
+      driverName: submissionDriverName,
       photo: state.photoPreview || null,
       lng: state.location?.lng,
       lat: state.location?.lat,
