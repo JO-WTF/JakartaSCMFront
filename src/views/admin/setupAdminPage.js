@@ -990,20 +990,21 @@ export function setupAdminPage(
       const label = item.dn_number ? `${item.dn_number}` : '';
       mId.textContent = `#${editingId} / ${label}`;
     }
-    if (mRemark) {
-      const remarkVal = item.remark ? String(item.remark) : '';
-      mRemark.value = perms.allowRemark ? remarkVal : '';
-    }
-    if (mDriverName) {
-      const driverNameVal = normalizeTextValue(
-        item.driver_name ??
-        item.driver_contact_name ??
-        item.driverName ??
-        ''
-      );
-      mDriverName.value = driverNameVal;
-      mDriverName.classList.remove('invalid-field');
-    }
+  if (mRemark) {
+    const remarkVal = item.remark ? String(item.remark) : '';
+    mRemark.value = perms.allowRemark ? remarkVal : '';
+  }
+  if (mDriverName) {
+    const driverNameRaw = normalizeTextValue(
+      item.driver_name ??
+      item.driver_contact_name ??
+      item.driverName ??
+      ''
+    );
+    const driverNameVal = driverNameRaw.replace(/\s*\(by\s+[^)]+\)\s*$/i, '').trim();
+    mDriverName.value = driverNameVal;
+    mDriverName.classList.remove('invalid-field');
+  }
     if (mDriverPhone) {
       const driverPhoneVal = normalizeTextValue(
         item.phone_number ??
