@@ -4,7 +4,13 @@
       <LanguageSwitcher v-model="state.lang" @change="setLang" />
     </div>
 
-    <main class="phone-card" role="main">
+    <PrivacyPolicyModal
+      :visible="showPrivacyModal"
+      @agree="handlePrivacyAgree"
+      @update:visible="showPrivacyModal = $event"
+    />
+
+    <main class="phone-card" role="main" v-show="!showPrivacyModal">
       <h1 class="phone-title">{{ translations.phoneTitle }}</h1>
       <p class="phone-description">{{ translations.phoneDescription }}</p>
 
@@ -47,10 +53,12 @@ import {
   validatePhoneNumberLength
 } from 'libphonenumber-js';
 import LanguageSwitcher from '../components/LanguageSwitcher.vue';
+import PrivacyPolicyModal from '../components/PrivacyPolicyModal.vue';
 import { createI18n } from '../i18n/core';
 import { getCookie, setCookie } from '../utils/cookie.js';
 
 const PHONE_COOKIE_KEY = 'phone_number';
+const PRIVACY_AGREED_KEY = 'privacy_agreed';
 const DEFAULT_COUNTRY = 'ID';
 
 const safeParsePhone = (value) => {
@@ -166,6 +174,7 @@ const isValidPhone = computed(() => phoneValidation.value.isValid);
 const showError = computed(() => phoneValidation.value.showError);
 const showCheckMark = computed(() => phoneValidation.value.showCheck);
 const isSubmitting = ref(false);
+const showPrivacyModal = ref(false);
 
 const setLang = async (lang) => {
   await i18n.setLang(lang);
@@ -232,9 +241,37 @@ const confirmPhone = async () => {
   }
 };
 
+const handlePrivacyAgree = () => {
+  // Mark privacy as agreed
+  setCookie(PRIVACY_AGREED_KEY, 'true', 365);
+  showPrivacyModal.value = false;
+  
+  // Focus phone input after modal closes
+  nextTick(() => {
+    if (phoneInput.value?.focus) {
+      phoneInput.value.focus();
+    }
+  });
+};
+
 onMounted(() => {
-  if (phoneInput.value?.focus) {
-    phoneInput.value.focus();
+  // Check if privacy policy has been agreed to
+  const hasAgreed = getCookie(PRIVACY_AGREED_KEY);
+  
+  // Allow forcing privacy modal via URL parameter for testing: ?showPrivacy=true
+  const forceShow = route.query.showPrivacy === 'true';
+  
+  console.log('[PhoneNumberView] Privacy cookie:', hasAgreed); // Debug log
+  console.log('[PhoneNumberView] Force show:', forceShow); // Debug log
+  
+  if (!hasAgreed || forceShow) {
+    // Show privacy modal if not yet agreed or forced
+    showPrivacyModal.value = true;
+  } else {
+    // Only focus if privacy modal is not shown
+    if (phoneInput.value?.focus) {
+      phoneInput.value.focus();
+    }
   }
 });
 </script>

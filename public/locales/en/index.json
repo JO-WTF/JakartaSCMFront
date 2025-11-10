@@ -54,5 +54,9 @@
   "driverNameLabel": "Driver Name",
   "driverNamePlaceholder": "Enter driver name",
   "driverNameMissingToast": "Driver name is required. Please fill it in.",
-  "clearInput": "Clear"
+  "clearInput": "Clear",
+  "currentPhoneLabel": "Current Phone",
+  "editPhoneButton": "Edit",
+  "privacyPolicyTitle": "Privacy Policy",
+  "privacyAgreeButton": "I have read and agree"
 }

@@ -54,5 +54,9 @@
   "driverNameLabel": "Nama Pengemudi",
   "driverNamePlaceholder": "Masukkan nama pengemudi",
   "driverNameMissingToast": "Nama pengemudi wajib diisi. Harap lengkapi.",
-  "clearInput": "Hapus"
+  "clearInput": "Hapus",
+  "currentPhoneLabel": "Nomor Saat Ini",
+  "editPhoneButton": "Ubah",
+  "privacyPolicyTitle": "Kebijakan Privasi",
+  "privacyAgreeButton": "Saya telah membaca dan menyetujui"
 }

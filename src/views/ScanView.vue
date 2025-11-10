@@ -2,6 +2,17 @@
   <div class="wrap scan-view">
     <LanguageSwitcher v-model="state.lang" @change="setLang" />
 
+    <!-- Phone Number Display -->
+    <div class="phone-display-card" v-if="phoneNumber">
+      <div class="phone-display-content">
+        <span class="phone-label">{{ t('currentPhoneLabel') }}:</span>
+        <span class="phone-value">{{ phoneNumber }}</span>
+      </div>
+      <button type="button" class="edit-phone-btn" @click="editPhone">
+        {{ t('editPhoneButton') }}
+      </button>
+    </div>
+
     <div>
       <h1>{{ t('scanTitle') }}</h1>
     </div>
@@ -198,11 +209,12 @@ import { createScanner } from '../composables/useScanner';
 import '../assets/css/scan.css';
 import { isValidDn } from '../utils/dn.js';
 import { STATUS_DELIVERY_ITEMS, STATUS_DELIVERY_VALUES, STATUS_SITE_ORDERED_LIST } from '../config.js';
-import { getCookie, setCookie } from '../utils/cookie.js';
+import { getCookie, setCookie, deleteCookie } from '../utils/cookie.js';
 
 const PHONE_COOKIE_KEY = 'phone_number';
 const DRIVER_NAME_STORAGE_KEY = 'scan_driver_name';
 const PHONE_STORAGE_KEY = 'phone_number';
+const PRIVACY_AGREED_KEY = 'privacy_agreed';
 
 const _i18n = await useI18n({ namespaces: ['core', 'index'], fallbackLang: 'id', defaultLang: 'id' });
 
@@ -869,6 +881,17 @@ const setLang = async (lang) => {
   state.lang = lang;
 };
 
+const editPhone = async () => {
+  // Clear the stored phone number and privacy agreement
+  deleteCookie(PHONE_COOKIE_KEY);
+  deleteCookie(PRIVACY_AGREED_KEY);
+  phoneNumber.value = '';
+  
+  // Navigate to phone number view
+  const redirectTo = router.currentRoute?.value?.fullPath || '/';
+  await router.replace({ name: 'phone', query: { redirect: redirectTo } });
+};
+
 onMounted(async () => {
   storedUserNameRef.value = getStoredUserName() || '';
   const currentPhone = refreshPhoneNumber();
@@ -939,6 +962,67 @@ onBeforeUnmount(async () => {
 <style scoped>
 .scan-view {
   padding-bottom: 40px;
+}
+
+.phone-display-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.phone-display-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.phone-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.phone-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: #0f172a;
+  font-family: 'SF Mono', 'Roboto Mono', 'Courier New', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.edit-phone-btn {
+  padding: 6px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.edit-phone-btn:hover {
+  background: #f8fafc;
+  border-color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.edit-phone-btn:active {
+  transform: translateY(0);
 }
 
 .driver-field-group {
@@ -1016,5 +1100,22 @@ onBeforeUnmount(async () => {
 .clear-input-btn span {
   line-height: 1;
   font-size: 16px;
+}
+
+@media (max-width: 600px) {
+  .phone-display-card {
+    padding: 10px 14px;
+    margin-bottom: 12px;
+  }
+
+  .phone-label,
+  .phone-value {
+    font-size: 13px;
+  }
+
+  .edit-phone-btn {
+    padding: 5px 12px;
+    font-size: 13px;
+  }
 }
 </style>

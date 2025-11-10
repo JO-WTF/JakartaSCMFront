@@ -54,5 +54,9 @@
   "driverNameLabel": "司机姓名",
   "driverNamePlaceholder": "请输入司机姓名",
   "driverNameMissingToast": "请填写司机姓名。",
-  "clearInput": "清空"
+  "clearInput": "清空",
+  "currentPhoneLabel": "当前手机号",
+  "editPhoneButton": "修改",
+  "privacyPolicyTitle": "隐私政策",
+  "privacyAgreeButton": "我已阅读并同意"
 }
