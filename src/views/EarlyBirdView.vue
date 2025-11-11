@@ -170,7 +170,7 @@ import { useBodyTheme } from '../composables/useBodyTheme';
 useBodyTheme('admin-theme');
 dayjs.extend(customParseFormat);
 
-const defaultStart = dayjs().startOf('month').format('YYYY-MM-DD');
+const defaultEnd = dayjs().format('YYYY-MM-DD');
 const defaultEnd = dayjs().format('YYYY-MM-DD');
 
 const startDate = ref(defaultStart);
