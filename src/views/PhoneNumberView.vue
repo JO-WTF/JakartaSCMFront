@@ -54,7 +54,7 @@ import {
 } from 'libphonenumber-js';
 import LanguageSwitcher from '../components/LanguageSwitcher.vue';
 import PrivacyPolicyModal from '../components/PrivacyPolicyModal.vue';
-import { createI18n } from '../i18n/core';
+import { useI18n } from '../i18n/useI18n';
 import { getCookie, setCookie } from '../utils/cookie.js';
 
 const PHONE_COOKIE_KEY = 'phone_number';
@@ -83,12 +83,11 @@ const formatAsYouType = (value) => {
   return formatter.input(value);
 };
 
-const i18n = createI18n({
+const i18n = await useI18n({
   namespaces: ['core', 'index'],
   fallbackLang: 'id',
   defaultLang: 'id',
 });
-await i18n.init();
 
 const router = useRouter();
 const route = useRoute();
