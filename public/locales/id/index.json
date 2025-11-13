@@ -57,6 +57,11 @@
   "clearInput": "Hapus",
   "currentPhoneLabel": "Nomor Saat Ini",
   "editPhoneButton": "Ubah",
+  "contactNameLabel": "Nama Kontak",
+  "contactPhoneLabel": "Telepon Kontak",
+  "contactInfoLoading": "Memuat…",
+  "contactInfoUnavailable": "Tidak tersedia",
+  "contactInfoErrorPrefix": "Gagal mengambil kontak:",
   "privacyPolicyTitle": "Kebijakan Privasi",
   "privacyAgreeButton": "Saya telah membaca dan menyetujui"
 }

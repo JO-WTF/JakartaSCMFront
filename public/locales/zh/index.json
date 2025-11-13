@@ -57,6 +57,11 @@
   "clearInput": "清空",
   "currentPhoneLabel": "当前手机号",
   "editPhoneButton": "修改",
+  "contactNameLabel": "联系人名称",
+  "contactPhoneLabel": "联系人电话",
+  "contactInfoLoading": "加载中…",
+  "contactInfoUnavailable": "暂无数据",
+  "contactInfoErrorPrefix": "联系人信息获取失败：",
   "privacyPolicyTitle": "隐私政策",
   "privacyAgreeButton": "我已阅读并同意"
 }

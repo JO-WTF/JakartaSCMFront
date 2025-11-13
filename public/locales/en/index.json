@@ -57,6 +57,11 @@
   "clearInput": "Clear",
   "currentPhoneLabel": "Current Phone",
   "editPhoneButton": "Edit",
+  "contactNameLabel": "Contact Name",
+  "contactPhoneLabel": "Contact Phone",
+  "contactInfoLoading": "Loading…",
+  "contactInfoUnavailable": "Not available",
+  "contactInfoErrorPrefix": "Contact info failed:",
   "privacyPolicyTitle": "Privacy Policy",
   "privacyAgreeButton": "I have read and agree"
 }

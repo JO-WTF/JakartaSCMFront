@@ -70,6 +70,26 @@
       </div>
 
       <template v-if="state.isValid">
+        <div class="contact-pill">
+          <div class="contact-pill__items">
+            <div class="contact-pill__item">
+              <span class="contact-pill__label">{{ t('contactNameLabel') }}</span>
+              <span class="contact-pill__value">
+                {{ state.contactLoading ? t('contactInfoLoading') : (state.contactName || t('contactInfoUnavailable')) }}
+              </span>
+            </div>
+            <div class="contact-pill__item">
+              <span class="contact-pill__label">{{ t('contactPhoneLabel') }}</span>
+              <span class="contact-pill__value contact-pill__value--mono">
+                {{ state.contactLoading ? t('contactInfoLoading') : (state.contactPhone || t('contactInfoUnavailable')) }}
+              </span>
+            </div>
+          </div>
+          <small v-if="state.contactError && !state.contactLoading" class="contact-pill__meta contact-pill__meta--error">
+            {{ t('contactInfoErrorPrefix') }} {{ state.contactError }}
+          </small>
+        </div>
+
         <div class="status-box" v-show="!state.submitOk">
           <div class="status-row" :class="{ shake: state.needsStatusShake }">
             <div>
@@ -296,6 +316,10 @@ const state = reactive({
   uploadPct: 0,
   driverNameMissing: false,
   driverPhoneMissing: false,
+  contactName: '',
+  contactPhone: '',
+  contactLoading: false,
+  contactError: '',
 });
 
 // 使用版本号强制响应式更新
@@ -363,6 +387,67 @@ const submitSummaryRows = computed(() => {
     },
   ];
 });
+
+const buildContactApiUrl = (dnNumber) => {
+  const apiBase = getApiBase();
+  if (!apiBase || !dnNumber) return '';
+  const normalizedBase = apiBase.replace(/\/+$/, '');
+  return `${normalizedBase}/api/dn/contacts/${encodeURIComponent(dnNumber)}`;
+};
+
+const resetContactInfo = () => {
+  state.contactName = '';
+  state.contactPhone = '';
+  state.contactError = '';
+  state.contactLoading = false;
+};
+
+const fetchContactInfo = async (dnNumber) => {
+  if (!dnNumber) {
+    resetContactInfo();
+    return;
+  }
+
+  state.contactLoading = true;
+  state.contactError = '';
+  state.contactName = '';
+  state.contactPhone = '';
+
+  try {
+    const contactUrl = buildContactApiUrl(dnNumber);
+    if (!contactUrl) {
+      throw new Error('Contact API unavailable');
+    }
+
+    const response = await fetch(contactUrl, { method: 'GET' });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const payload = await response.json();
+    const noDataMsg = 'DN contact service returned no data';
+    if (payload?.detail === noDataMsg || payload?.error === noDataMsg) {
+      // treat as graceful "no data" so UI shows fallback text without an error badge
+      resetContactInfo();
+      return;
+    }
+
+    const success = payload?.ok === true || payload?.success === true;
+    if (!success || !payload?.data) {
+      throw new Error(payload?.message || payload?.detail || payload?.error || 'Unknown error');
+    }
+
+    const data = payload.data || {};
+    state.contactName = data.contact_name || data.daily_work_owner || '';
+    state.contactPhone = data.contact_number || data.subcon_contact || '';
+  } catch (err) {
+    console.error('Failed to fetch contact info:', err);
+    state.contactError = err?.message || 'Unknown error';
+  } finally {
+    state.contactLoading = false;
+  }
+};
 
 const validateDN = (text) => isValidDn(text);
 
@@ -464,6 +549,7 @@ const resume = async () => {
   state.dnNumber = '';
   state.location = null;
   state.locationError = false;
+  resetContactInfo();
   try {
     await start();
   } catch (e) {
@@ -826,10 +912,15 @@ const onOkClick = async () => {
   state.dnNumber = (dnInput.value?.value || '').toUpperCase();
   state.isValid = validateDN(state.dnNumber);
 
+  let contactPromise = null;
   if (state.isValid) {
     await stop();
     hideKeyboard();
     state.hasDN = true;
+    contactPromise = fetchContactInfo(state.dnNumber);
+  } else {
+    state.hasDN = false;
+    resetContactInfo();
   }
 
   state.locationError = false;
@@ -850,6 +941,14 @@ const onOkClick = async () => {
     console.error('Failed to get location:', e);
     state.location = { lat: null, lng: null };
     state.locationError = true;
+  }
+
+  if (contactPromise) {
+    try {
+      await contactPromise;
+    } catch (err) {
+      console.error('Contact info promise rejected:', err);
+    }
   }
 };
 
@@ -1025,6 +1124,61 @@ onBeforeUnmount(async () => {
   transform: translateY(0);
 }
 
+.contact-pill {
+  background: rgba(8, 14, 34, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 16px 24px;
+  margin: 16px 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: inherit;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+}
+
+.contact-pill__items {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 24px;
+}
+
+.contact-pill__item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 140px;
+}
+
+.contact-pill__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.contact-pill__value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.contact-pill__value--mono {
+  font-family: 'SF Mono', 'Roboto Mono', 'Courier New', monospace;
+  letter-spacing: 0.04em;
+}
+
+.contact-pill__meta {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.contact-pill__meta--error {
+  color: #fecaca;
+}
+
 .driver-field-group {
   display: flex;
   flex-direction: column;
@@ -1116,6 +1270,21 @@ onBeforeUnmount(async () => {
   .edit-phone-btn {
     padding: 5px 12px;
     font-size: 13px;
+  }
+
+  .contact-pill {
+    border-radius: 32px;
+    padding: 12px 18px;
+  }
+
+  .contact-pill__items {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .contact-pill__value {
+    font-size: 15px;
   }
 }
 </style>
