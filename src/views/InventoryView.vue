@@ -223,6 +223,7 @@ const dnInputManage = ref(null);
 const successTimer = { id: null };
 const highlightPulse = ref(false);
 let highlightTimer = null;
+const lastHighlightedDn = ref('');
 let refocusTimer = null;
 let lastAgingPayload = { dn: '', pm: '' };
 const agingMessage = ref('');
@@ -371,6 +372,9 @@ onBeforeUnmount(async () => {
     if (successTimer.id) { clearTimeout(successTimer.id); successTimer.id = null; }
   } catch {}
   try {
+    if (highlightTimer) { clearTimeout(highlightTimer); highlightTimer = null; }
+  } catch {}
+  try {
     if (refocusTimer) { clearTimeout(refocusTimer); refocusTimer = null; }
   } catch {}
   try {
@@ -447,6 +451,21 @@ const onDNBlur = () => {
   }, 500);
 };
 
+const triggerHighlight = (dn) => {
+  try {
+    const val = (dn || '').trim();
+    if (!val) return;
+    if (lastHighlightedDn.value === val && highlightPulse.value) return;
+    highlightPulse.value = false;
+    if (highlightTimer) { clearTimeout(highlightTimer); highlightTimer = null; }
+    setTimeout(() => { highlightPulse.value = true; }, 10);
+    highlightTimer = setTimeout(() => { highlightPulse.value = false; highlightTimer = null; }, 1800);
+    lastHighlightedDn.value = val;
+  } catch (e) {
+    console.error('triggerHighlight', e);
+  }
+};
+
 const onCodeScannedManage = async (code) => {
   try {
     const v = String(code || '').toUpperCase();
@@ -460,19 +479,8 @@ const onCodeScannedManage = async (code) => {
     manageState.value.dnNumber = v;
     if (manageState.value.isValid) {
       onDNEnter();
+      triggerHighlight(v);
     }
-
-    // animate input to emphasize the scanned DN when valid
-    try {
-      if (manageState.value.isValid) {
-        highlightPulse.value = false; // restart
-        if (highlightTimer) { clearTimeout(highlightTimer); highlightTimer = null; }
-        // small next tick to allow CSS reflow restart
-        setTimeout(() => { highlightPulse.value = true; }, 10);
-        // keep highlight long enough for two pulses
-        highlightTimer = setTimeout(() => { highlightPulse.value = false; highlightTimer = null; }, 1800);
-      }
-    } catch (e) {}
 
     // Keep scanner running so it continues to scan for new codes.
     // We intentionally do NOT stop the scanner or set hasDN here.

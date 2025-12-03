@@ -1079,17 +1079,14 @@
   background: rgba(255, 255, 255, 0.04);
 }
 
-/* Highlight animation when a DN is scanned successfully */
+/* Flash text color when a DN is scanned successfully */
 .inventory-view .dn-input-row input.dn-highlight {
-  animation: dnPulse 0.9s ease-in-out 0s 2;
-  box-shadow: 0 0 0 6px rgba(255,255,255,0.06);
-  border-color: var(--accent-hover, #5891e6);
+  animation: dnTextFlash 0.7s ease-in-out 0s 2;
 }
-@keyframes dnPulse {
-  0% { transform: scale(1); }
-  30% { transform: scale(1.02); }
-  60% { transform: scale(0.995); }
-  100% { transform: scale(1); }
+@keyframes dnTextFlash {
+  0%, 100% { color: inherit; }
+  40% { color: var(--success, #52c41a); }
+  70% { color: inherit; }
 }
 
 .inventory-view .status-icon {
