@@ -1046,6 +1046,32 @@
   transition: all 0.3s ease;
 }
 
+.inventory-view .dn-confirm-btn {
+  height: 42px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(180deg, var(--accent, #69a8ff), var(--accent-hover, #5891e6));
+  color: #07122b;
+  border-color: transparent;
+  box-shadow: var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.25));
+  font-weight: 600;
+}
+
+.inventory-view .dn-confirm-btn:hover:not(:disabled) {
+  filter: brightness(1.05);
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.35));
+}
+
+.inventory-view .dn-confirm-btn:disabled,
+.inventory-view .dn-confirm-btn.ant-btn-disabled {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.5);
+  border-color: rgba(255, 255, 255, 0.06);
+  box-shadow: none;
+}
+
 .inventory-view .dn-input-row input:focus {
   outline: none;
   border-color: #69a8ff;
@@ -1156,6 +1182,18 @@
 .inventory-view .status-box.muted {
   color: rgba(255, 255, 255, 0.5);
   font-size: 13px;
+}
+
+.inventory-view .success-message {
+  color: #2ed48a;
+  font-weight: 700;
+  margin-top: 8px;
+}
+
+.inventory-view .aging-result.aging-success {
+  color: #2ed48a;
+  border-color: rgba(46, 212, 138, 0.45);
+  background: rgba(46, 212, 138, 0.08);
 }
 
 .inventory-view .lang-switcher-container .lang-switch {

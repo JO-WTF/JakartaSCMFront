@@ -90,10 +90,19 @@
             maxlength="40"
             v-model="manageState.dnNumber"
             @input="onDNInputManage"
+            @keyup.enter="onDNEnter"
             @focus="onDNFocus"
             @blur="onDNBlur"
             :class="{ 'dn-highlight': highlightPulse }"
           />
+          <a-button
+            type="primary"
+            class="dn-confirm-btn"
+            :disabled="!manageState.isValid"
+            @click="onDNEnter"
+          >
+            {{ t('confirm') || '确认' }}
+          </a-button>
         </div>
       </div>
 
@@ -122,16 +131,20 @@
         </div>
       </div>
 
-      <div v-if="agingMessage" class="status-box muted aging-result">
+      <div
+        v-if="agingMessage"
+        :class="['status-box', 'aging-result', agingSuccess ? 'aging-success' : 'muted']"
+      >
         {{ agingMessage }}
       </div>
 
       <!-- Messages -->
       <div v-if="manageState.msg" class="message-section">
+        <div v-if="manageState.ok" class="success-message">{{ manageState.msg }}</div>
         <a-alert
-          v-if="!isCameraError(manageState.msg)"
+          v-else-if="!isCameraError(manageState.msg)"
           :message="manageState.msg"
-          :type="manageState.ok ? 'success' : 'error'"
+          type="error"
           show-icon
         />
         <div v-else class="status-box muted">({{ t('cameraError') }})</div>
@@ -211,14 +224,15 @@ const successTimer = { id: null };
 const highlightPulse = ref(false);
 let highlightTimer = null;
 let refocusTimer = null;
-let agingTimer = null;
 let lastAgingPayload = { dn: '', pm: '' };
 const agingMessage = ref('');
 const agingInFlight = ref(false);
+const agingSuccess = ref(false);
 // simple dedupe to avoid repeated handling of same code in short period
 const lastScanned = ref('');
 const lastScannedAt = ref(0);
 const scanCooldownMs = 500; // ms
+let agingMessageTimer = null;
 
 const setMode = (m) => {
   mode.value = m;
@@ -257,7 +271,6 @@ const columns = computed(() => {
   return [
     { title: colTitle('orderName', 'Order Name'), dataIndex: 'order_name', key: 'order_name' },
     { title: colTitle('shipmentNo', 'Shipment No.'), dataIndex: 'shipment_no', key: 'shipment_no' },
-    { title: colTitle('shipmentStatus', 'Status'), dataIndex: 'shipment_status', key: 'shipment_status' },
     {
       title: colTitle('updatedAt', 'Updated At'),
       dataIndex: 'updated_at',
@@ -361,7 +374,7 @@ onBeforeUnmount(async () => {
     if (refocusTimer) { clearTimeout(refocusTimer); refocusTimer = null; }
   } catch {}
   try {
-    if (agingTimer) { clearTimeout(agingTimer); agingTimer = null; }
+    if (agingMessageTimer) { clearTimeout(agingMessageTimer); agingMessageTimer = null; }
   } catch {}
 });
 
@@ -445,7 +458,9 @@ const onCodeScannedManage = async (code) => {
 
     manageState.value.isValid = isValidDn(v);
     manageState.value.dnNumber = v;
-    scheduleAgingUpdate();
+    if (manageState.value.isValid) {
+      onDNEnter();
+    }
 
     // animate input to emphasize the scanned DN when valid
     try {
@@ -469,7 +484,15 @@ const onCodeScannedManage = async (code) => {
 const onDNInputManage = () => {
   manageState.value.dnNumber = (dnInputManage.value?.value || '').toUpperCase();
   manageState.value.isValid = isValidDn(manageState.value.dnNumber);
-  scheduleAgingUpdate();
+  if (!manageState.value.isValid) {
+    agingMessage.value = '';
+    agingSuccess.value = false;
+    if (agingMessageTimer) { clearTimeout(agingMessageTimer); agingMessageTimer = null; }
+  }
+};
+
+const onDNEnter = () => {
+  triggerAgingCheck();
 };
 
 // rescan removed per UI simplification: scanning now continues automatically
@@ -530,9 +553,9 @@ const performAction = async (path, actionName) => {
       // last resort hardcoded english
       if (!finalMsg) finalMsg = 'Success';
       manageState.value.msg = finalMsg;
-      // auto-hide success message after 3s
+      // auto-hide success message after 2s
       try { if (successTimer.id) clearTimeout(successTimer.id); } catch (e) {}
-      successTimer.id = setTimeout(() => { manageState.value.msg = ''; successTimer.id = null; }, 3000);
+      successTimer.id = setTimeout(() => { manageState.value.msg = ''; successTimer.id = null; }, 1000);
     } else {
       // prefer backend message/detail, but try translate
       let successMsg = j?.message || j?.detail || rawText || (manageState.value.ok ? 'OK' : 'Failed');
@@ -571,22 +594,16 @@ const getCurrentPmName = () => {
   );
 };
 
-const scheduleAgingUpdate = () => {
-  if (agingTimer) {
-    clearTimeout(agingTimer);
-    agingTimer = null;
-  }
+const triggerAgingCheck = () => {
   const dn = (manageState.value.dnNumber || '').trim();
   const pm = getCurrentPmName();
   if (!dn || !pm || !isValidDn(dn)) {
     agingMessage.value = '';
+    agingSuccess.value = false;
+    if (agingMessageTimer) { clearTimeout(agingMessageTimer); agingMessageTimer = null; }
     return;
   }
-
-  agingTimer = setTimeout(() => {
-    agingTimer = null;
-    sendAgingUpdate(dn, pm);
-  }, 500);
+  sendAgingUpdate(dn, pm);
 };
 
 const sendAgingUpdate = async (dn, pm) => {
@@ -596,6 +613,13 @@ const sendAgingUpdate = async (dn, pm) => {
     const API_BASE = getApiBase();
     if (!API_BASE) {
       agingMessage.value = formatAgingSuccess(dn);
+      agingSuccess.value = true;
+      if (agingMessageTimer) { clearTimeout(agingMessageTimer); agingMessageTimer = null; }
+      agingMessageTimer = setTimeout(() => {
+        agingMessage.value = '';
+        agingSuccess.value = false;
+        agingMessageTimer = null;
+      }, 1000);
       return;
     }
     agingInFlight.value = true;
@@ -618,11 +642,22 @@ const sendAgingUpdate = async (dn, pm) => {
     const serverMsg = parsed?.message || parsed?.detail || parsed?.error || rawText || '';
     if (!res.ok) {
       agingMessage.value = formatAgingError(dn, serverMsg);
+      agingSuccess.value = false;
+      if (agingMessageTimer) { clearTimeout(agingMessageTimer); agingMessageTimer = null; }
       return;
     }
     agingMessage.value = formatAgingSuccess(dn, serverMsg);
+    agingSuccess.value = true;
+    if (agingMessageTimer) { clearTimeout(agingMessageTimer); agingMessageTimer = null; }
+    agingMessageTimer = setTimeout(() => {
+      agingMessage.value = '';
+      agingSuccess.value = false;
+      agingMessageTimer = null;
+    }, 1000);
   } catch (e) {
     agingMessage.value = formatAgingError(dn, e?.message || 'Error');
+    agingSuccess.value = false;
+    if (agingMessageTimer) { clearTimeout(agingMessageTimer); agingMessageTimer = null; }
     console.error('sendAgingUpdate error', e);
   } finally {
     agingInFlight.value = false;
