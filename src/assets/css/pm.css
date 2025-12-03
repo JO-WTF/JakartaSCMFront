@@ -647,7 +647,6 @@
 .pm-view .ant-input:focus-visible,
 .pm-view .ant-input-affix-wrapper:focus-visible,
 .pm-view .ant-btn:focus-visible {
-  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -1074,9 +1073,9 @@
 
 .inventory-view .dn-input-row input:focus {
   outline: none;
-  border-color: #69a8ff;
-  box-shadow: 0 0 0 3px rgba(105, 168, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--scan-border-light, rgba(255, 255, 255, 0.08));
+  box-shadow: none;
+  background: rgba(255, 255, 255, 0.02);
 }
 
 /* Flash text color when a DN is scanned successfully */

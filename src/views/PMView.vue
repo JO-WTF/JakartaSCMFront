@@ -59,9 +59,18 @@
         <!-- PM List / Create area: show table when mode is 'use', else show create UI below -->
         <div class="pm-list" style="margin-top:16px">
           <div v-if="mode === 'use'">
-            <div class="pm-list-header" style="display:flex; align-items:center; justify-content:space-between">
+            <div class="pm-list-header" style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap">
               <div class="pm-list-title">{{ t('pm.list.title') || 'Available PMs' }}</div>
-              <a-button class="pm-refresh-btn" size="small" @click="fetchPMList">{{ t('pm.list.refresh') || 'Refresh' }}</a-button>
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap">
+                <a-input
+                  v-model:value="pmFilter"
+                  size="small"
+                  allow-clear
+                  :placeholder="filterPlaceholder"
+                  style="width: 200px"
+                />
+                <a-button class="pm-refresh-btn" size="small" @click="fetchPMList">{{ t('pm.list.refresh') || 'Refresh' }}</a-button>
+              </div>
             </div>
             <div v-if="pmLoading" style="margin-top:8px">
               <a-spin class="pm-loading" />
@@ -70,7 +79,7 @@
 
             <!-- Card grid instead of table -->
             <a-row v-else :gutter="16" class="pm-card-grid" style="margin-top:12px">
-              <a-col v-for="item in pmList" :key="item.id" :xs="24" :sm="12" :md="8" :lg="6">
+              <a-col v-for="item in filteredPMs" :key="item.id" :xs="24" :sm="12" :md="8" :lg="6">
                 <a-card class="pm-item-card" :body-style="{ padding: '12px' }">
                   <div class="pm-item-content">
                     <div class="pm-item-name">{{ item.pm_name || '-' }}</div>
@@ -176,6 +185,21 @@ const deletingPMKeys = ref(new Set());
 // PM list state
 const pmList = ref([]);
 const pmLoading = ref(false);
+const pmFilter = ref('');
+const filteredPMs = computed(() => {
+  i18nVersion.value;
+  const keyword = (pmFilter.value || '').trim().toLowerCase();
+  if (!keyword) return pmList.value || [];
+  return (pmList.value || []).filter((pm) => (pm?.pm_name || '').toLowerCase().includes(keyword));
+});
+const filterPlaceholder = computed(() => {
+  i18nVersion.value;
+  const k1 = t('pm.list.filter');
+  if (k1 && k1 !== 'pm.list.filter') return k1;
+  const k2 = t('pm.search.placeholder');
+  if (k2 && k2 !== 'pm.search.placeholder') return k2;
+  return 'Filter by name';
+});
 
 const getPMKey = (pm) => {
   if (!pm || typeof pm !== 'object') return '';
