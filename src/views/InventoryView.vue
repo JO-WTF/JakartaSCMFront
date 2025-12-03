@@ -235,14 +235,16 @@ const lastScannedAt = ref(0);
 const scanCooldownMs = 500; // ms
 let agingMessageTimer = null;
 
-const setMode = (m) => {
+const setMode = async (m) => {
   mode.value = m;
   if (m === 'inventory') {
-    stopManageScanner();
+    await stopManageScanner();
     fetchInventory();
+    return;
   }
   if (m === 'manage' || m === 'count') {
-    initManageScanner();
+    await nextTick();
+    await initManageScanner();
     focusDNInput();
   }
 };
