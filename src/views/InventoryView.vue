@@ -469,7 +469,8 @@ const onCodeScannedManage = async (code) => {
         if (highlightTimer) { clearTimeout(highlightTimer); highlightTimer = null; }
         // small next tick to allow CSS reflow restart
         setTimeout(() => { highlightPulse.value = true; }, 10);
-        highlightTimer = setTimeout(() => { highlightPulse.value = false; highlightTimer = null; }, 900);
+        // keep highlight long enough for two pulses
+        highlightTimer = setTimeout(() => { highlightPulse.value = false; highlightTimer = null; }, 1800);
       }
     } catch (e) {}
 

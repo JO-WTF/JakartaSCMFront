@@ -1081,7 +1081,7 @@
 
 /* Highlight animation when a DN is scanned successfully */
 .inventory-view .dn-input-row input.dn-highlight {
-  animation: dnPulse 0.9s ease-in-out;
+  animation: dnPulse 0.9s ease-in-out 0s 2;
   box-shadow: 0 0 0 6px rgba(255,255,255,0.06);
   border-color: var(--accent-hover, #5891e6);
 }
