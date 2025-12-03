@@ -15,5 +15,9 @@
   "pm.list.title": "PM Tersedia",
   "pm.list.refresh": "Muat Ulang",
   "pm.list.location": "Lokasi",
-  "pm.select": "Pilih"
+  "pm.select": "Pilih",
+  "pm.delete": "Hapus",
+  "pm.delete.confirm": "Hapus {name}?",
+  "pm.delete.success": "Berhasil dihapus",
+  "pm.delete.fail": "Gagal menghapus"
 }

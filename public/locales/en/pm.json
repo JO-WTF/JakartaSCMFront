@@ -15,5 +15,9 @@
   "pm.list.title": "Available PMs",
   "pm.list.refresh": "Refresh",
   "pm.list.location": "Location",
-  "pm.select": "Select"
+  "pm.select": "Select",
+  "pm.delete": "Delete",
+  "pm.delete.confirm": "Delete {name}?",
+  "pm.delete.success": "Deleted successfully",
+  "pm.delete.fail": "Delete failed"
 }

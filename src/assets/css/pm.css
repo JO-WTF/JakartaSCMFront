@@ -765,6 +765,19 @@
   transform: translateY(-1px);
 }
 
+.pm-view .pm-delete-btn {
+  background: linear-gradient(180deg, #ff9fb3, #ff6f8c);
+  border: none;
+  color: #07122b;
+  height: 34px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  box-shadow: 0 6px 14px rgba(255, 111, 140, 0.28);
+}
+.pm-view .pm-delete-btn:hover {
+  transform: translateY(-1px);
+}
+
 /* stronger hover for card */
 .pm-view .pm-item-card:hover {
   /* keep visual state but no animation */
@@ -808,6 +821,9 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+.pm-view .pm-item-card .ant-card-actions > li {
+  border-right: none !important; /* remove divider between buttons */
 }
 
 /* Place language switcher in card head extra area */
@@ -975,7 +991,7 @@
 }
 
 .inventory-view .total-count {
-  margin: 0 0 16px 0;
+  margin: 0;
   font-weight: 600;
   font-size: 15px;
   color: var(--fg, #eaf2ff);

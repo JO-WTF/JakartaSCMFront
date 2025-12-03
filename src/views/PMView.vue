@@ -78,6 +78,17 @@
                   </div>
                   <template #actions>
                     <a-button class="pm-select-btn" type="primary" size="small" @click="doSelectPM(item)">{{ t('pm.select') || 'Select' }}</a-button>
+                    <a-button
+                      v-if="isTransportManager"
+                      class="pm-delete-btn"
+                      type="primary"
+                      danger
+                      size="small"
+                      :loading="isDeleting(item)"
+                      @click="deletePM(item)"
+                    >
+                      {{ t('pm.delete') || 'Delete' }}
+                    </a-button>
                   </template>
                 </a-card>
               </a-col>
@@ -127,18 +138,23 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onBeforeUnmount, h, nextTick } from 'vue';
+import { ref, reactive, onMounted, onBeforeUnmount, h, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from '../i18n/useI18n';
 import { getMapboxAccessToken, getApiBase } from '../utils/env.js';
 import { EnvironmentOutlined } from '@ant-design/icons-vue';
 import LanguageSwitcher from '../components/LanguageSwitcher.vue';
+import { useAuth } from '../composables/useAuth.js';
+import { TRANSPORT_MANAGER_ROLE_KEY } from '../config.js';
 
 // use shared i18n helper
 const _i18n = await useI18n({ namespaces: ['core', 'index', 'pm'], fallbackLang: 'id', defaultLang: 'id' });
 const i18nVersion = ref(0);
 _i18n.onChange(() => { i18nVersion.value++; });
 const t = (key, vars) => { i18nVersion.value; return _i18n.t(key, vars); };
+
+const { authState, loadAuthState } = useAuth();
+const isTransportManager = computed(() => authState.value?.roleKey === TRANSPORT_MANAGER_ROLE_KEY);
 
 const mapContainer = ref(null);
 const mapboxgl = ref(null);
@@ -155,10 +171,35 @@ const submitting = ref(false);
 const isGettingLocation = ref(false);
 const submitOk = ref(false);
 const submitMsg = ref('');
+const deletingPMKeys = ref(new Set());
 
 // PM list state
 const pmList = ref([]);
 const pmLoading = ref(false);
+
+const getPMKey = (pm) => {
+  if (!pm || typeof pm !== 'object') return '';
+  if (pm.id != null) return String(pm.id);
+  if (pm.pm_name) return String(pm.pm_name);
+  return '';
+};
+
+const setDeleting = (pm, value) => {
+  const key = getPMKey(pm);
+  if (!key) return;
+  const next = new Set(deletingPMKeys.value);
+  if (value) {
+    next.add(key);
+  } else {
+    next.delete(key);
+  }
+  deletingPMKeys.value = next;
+};
+
+const isDeleting = (pm) => {
+  const key = getPMKey(pm);
+  return key ? deletingPMKeys.value.has(key) : false;
+};
 
 const renderPMItem = (item) => {
   return h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0' } }, [
@@ -271,6 +312,51 @@ const doSelectPM = async (p) => {
     router.push({ path: '/inventory' }).catch(() => {});
   } catch (e) {
     console.error('doSelectPM', e);
+  }
+};
+
+const deletePM = async (pm) => {
+  if (!isTransportManager.value || !pm) return;
+  const key = getPMKey(pm);
+  if (!key) return;
+  const name = pm.pm_name || key;
+  const confirmText = t('pm.delete.confirm', { name });
+  const confirmMessage = confirmText && confirmText !== 'pm.delete.confirm' ? confirmText : `Delete ${name}?`;
+  const confirmed = typeof window === 'undefined'
+    ? true
+    : window.confirm(confirmMessage);
+  if (!confirmed) return;
+
+  if (!pm.pm_name) return;
+  setDeleting(pm, true);
+  submitMsg.value = '';
+  try {
+    const API_BASE = getApiBase();
+    const base = API_BASE ? API_BASE.replace(/\/+$/, '') : '';
+    const url = base + '/api/pm/delete-pm';
+    const res = await fetch(url, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pm_name: pm.pm_name }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    submitOk.value = true;
+    submitMsg.value = t('pm.delete.success');
+    try {
+      await fetchPMList();
+      if (pmName.value && pm.pm_name && pmName.value === pm.pm_name) {
+        pmName.value = '';
+        try { localStorage.removeItem('selected_pm_name'); } catch (e) {}
+      }
+    } catch (err) {
+      console.error('refresh after delete failed', err);
+    }
+  } catch (e) {
+    submitOk.value = false;
+    submitMsg.value = `${t('pm.delete.fail')}: ${e?.message || 'Error'}`;
+    console.error('deletePM', e);
+  } finally {
+    setDeleting(pm, false);
   }
 };
 
@@ -505,6 +591,7 @@ const submitPM = async () => {
 };
 
 onMounted(async () => {
+  try { loadAuthState(); } catch (e) { console.warn('loadAuthState', e); }
   // fetch PM list on mount
   try { await fetchPMList(); } catch (e) {}
 });
