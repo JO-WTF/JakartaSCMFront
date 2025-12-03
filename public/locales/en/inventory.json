@@ -1,7 +1,14 @@
 {
   "viewInventory": "View Inventory",
   "manageInOut": "Inbound/Outbound",
+  "switchWarehouse": "Switch Warehouse",
+  "inventoryCheck": "Stock Take",
+  "inventoryCheckPlaceholder": "Stock take mode (no inbound/outbound actions)",
+  "inventoryCheckSuccess": "Stock take success",
+  "inventoryCheckError": "Stock take failed",
   "totalCount": "Total",
+  "inventoryFilterPlaceholder": "Filter by DN or shipment number",
+  "clearFilter": "Clear",
   "dnCode": "DN Code",
   "rescan": "Rescan",
   "inbound": "Inbound",
@@ -17,5 +24,15 @@
   "pm.inventory.error.default": "An error occurred",
   "pm.inventory.success.inbound": "Inbound success",
   "pm.inventory.success.outbound": "Outbound success",
-  "pm.inventory.success.default": "Success"
+  "pm.inventory.success.default": "Success",
+  "pmLocation": "Warehouse",
+  "orderName": "DN Code",
+  "shipmentNo": "Shipment No.",
+  "shipmentStatus": "Status",
+  "sourceLocation": "Source Location",
+  "destinationLocation": "Destination",
+  "serviceProvider": "Service Provider",
+  "sheetTitle": "Sheet",
+  "sheetPosition": "Sheet Position",
+  "updatedAt": "Updated At"
 }

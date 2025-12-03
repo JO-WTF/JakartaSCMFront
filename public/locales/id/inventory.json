@@ -1,7 +1,14 @@
 {
   "viewInventory": "Lihat Inventaris",
   "manageInOut": "Kelola Masuk/Keluar",
+  "switchWarehouse": "Ganti Gudang",
+  "inventoryCheck": "Stok Opname",
+  "inventoryCheckPlaceholder": "Mode stok opname tanpa aksi masuk/keluar",
+  "inventoryCheckSuccess": "Stok opname berhasil",
+  "inventoryCheckError": "Stok opname gagal",
   "totalCount": "Total",
+  "inventoryFilterPlaceholder": "Saring DN atau nomor pengiriman",
+  "clearFilter": "Bersihkan",
   "dnCode": "Kode DN",
   "rescan": "Pindai Ulang",
   "inbound": "Masuk",
@@ -17,5 +24,15 @@
   "pm.inventory.error.default": "Terjadi kesalahan",
   "pm.inventory.success.inbound": "Berhasil masuk inventaris",
   "pm.inventory.success.outbound": "Berhasil keluar inventaris",
-  "pm.inventory.success.default": "Berhasil"
+  "pm.inventory.success.default": "Berhasil",
+  "pmLocation": "Gudang",
+  "orderName": "Kode DN",
+  "shipmentNo": "No. Pengiriman",
+  "shipmentStatus": "Status",
+  "sourceLocation": "Lokasi asal",
+  "destinationLocation": "Lokasi tujuan",
+  "serviceProvider": "Penyedia layanan",
+  "sheetTitle": "Sheet",
+  "sheetPosition": "Posisi sheet",
+  "updatedAt": "Diperbarui"
 }

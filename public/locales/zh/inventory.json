@@ -1,7 +1,14 @@
 {
   "viewInventory": "查看库存",
   "manageInOut": "出入库管理",
+  "switchWarehouse": "切换仓库",
+  "inventoryCheck": "库存盘点",
+  "inventoryCheckPlaceholder": "盘点模式，无出入库操作",
+  "inventoryCheckSuccess": "盘点成功",
+  "inventoryCheckError": "盘点失败",
   "totalCount": "总数",
+  "inventoryFilterPlaceholder": "按 DN 或运单号筛选",
+  "clearFilter": "清除筛选",
   "dnCode": "DN 编码",
   "rescan": "重新扫描",
   "inbound": "入库",
@@ -17,5 +24,15 @@
   "pm.inventory.error.default": "发生错误",
   "pm.inventory.success.inbound": "入库成功",
   "pm.inventory.success.outbound": "出库成功",
-  "pm.inventory.success.default": "操作成功"
+  "pm.inventory.success.default": "操作成功",
+  "pmLocation": "仓库",
+  "orderName": "DN 编码",
+  "shipmentNo": "运单号",
+  "shipmentStatus": "状态",
+  "sourceLocation": "起点",
+  "destinationLocation": "终点",
+  "serviceProvider": "服务商",
+  "sheetTitle": "Sheet",
+  "sheetPosition": "表格位置",
+  "updatedAt": "更新时间"
 }

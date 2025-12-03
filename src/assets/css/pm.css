@@ -857,11 +857,34 @@
   padding-top: 4px;
 }
 
+.inventory-view .pm-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
 .inventory-view .pm-title {
   font-size: 22px;
   font-weight: 700;
-  margin: 0 0 16px 0;
+  margin: 0;
   color: var(--fg, #eaf2ff);
+}
+
+.inventory-view .aging-result {
+  margin-top: 12px;
+}
+
+.inventory-view .pm-switch-btn {
+  color: var(--fg, #eaf2ff);
+  border-color: var(--border, #1f2a4d);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.inventory-view .pm-switch-btn:hover:not(:disabled) {
+  color: #69a8ff;
+  border-color: #69a8ff;
 }
 
 .inventory-view .mode-switcher {
@@ -875,6 +898,80 @@
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.inventory-view .ant-table-wrapper .ant-table-cell {
+  white-space: normal;
+  word-break: break-word;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.inventory-view .ant-table-wrapper .ant-table-thead > tr > th {
+  white-space: normal;
+  word-break: break-word;
+  padding: 8px 10px;
+}
+
+.inventory-view .ant-table-wrapper .ant-table-cell.col-updated-at {
+  font-size: 10px;
+  min-width: 100px;
+}
+
+.inventory-view .ant-table-wrapper .ant-table-thead > tr > th.col-updated-at {
+  min-width: 100px;
+}
+
+.inventory-view .inventory-filter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.inventory-view .filter-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.inventory-view .filter-control {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border, #1f2a4d);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--fg, #eaf2ff);
+  min-width: 160px;
+  max-width: 260px;
+}
+
+.inventory-view .filter-control:focus {
+  outline: none;
+  border-color: #69a8ff;
+  box-shadow: 0 0 0 3px rgba(105, 168, 255, 0.1);
+}
+
+.inventory-view .filter-clear {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border, #1f2a4d);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--fg, #eaf2ff);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.inventory-view .filter-clear:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.inventory-view .filter-clear:not(:disabled):hover {
+  border-color: #69a8ff;
+  color: #69a8ff;
 }
 
 .inventory-view .total-count {
@@ -1100,9 +1197,14 @@
     margin-bottom: 16px;
   }
 
+  .inventory-view .pm-title-row {
+    margin-bottom: 10px;
+    gap: 8px;
+  }
+
   .inventory-view .pm-title {
     font-size: 20px;
-    margin-bottom: 12px;
+    margin-bottom: 0;
   }
 
   .inventory-view .content-section {
