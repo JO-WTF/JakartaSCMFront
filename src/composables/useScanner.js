@@ -41,6 +41,7 @@ export async function createScanner() {
   const setVideoFit = (v) => { if (scanner && typeof scanner.setVideoFit === 'function') scanner.setVideoFit(v); };
   const show = async () => { if (!scanner) await init(); if (typeof scanner.show === 'function') return scanner.show(); };
   const stop = async () => { if (scanner && typeof scanner.stop === 'function') return scanner.stop(); };
+  const hide = async () => { if (!scanner) await init(); if (typeof scanner.hide === 'function') return scanner.hide(); };
   const destroyContext = async () => { if (scanner && typeof scanner.destroyContext === 'function') return scanner.destroyContext(); };
   const setOnUniqueRead = (fn) => { if (scanner) scanner.onUniqueRead = fn; };
   const getAllCameras = async () => { if (!scanner) await init(); return (typeof scanner.getAllCameras === 'function') ? scanner.getAllCameras() : []; };
@@ -55,6 +56,7 @@ export async function createScanner() {
     setVideoFit,
     show,
     stop,
+    hide,
     destroyContext,
     setOnUniqueRead,
     getAllCameras,

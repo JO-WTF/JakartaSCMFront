@@ -238,7 +238,7 @@ let agingMessageTimer = null;
 const setMode = async (m) => {
   mode.value = m;
   if (m === 'inventory') {
-    await stopManageScanner();
+    await stopManageScanner({ destroy: true });
     fetchInventory();
     return;
   }
@@ -365,10 +365,7 @@ onMounted(() => {
 
 onBeforeUnmount(async () => {
   try {
-    if (scannerManage && typeof scannerManage.stop === 'function') await scannerManage.stop();
-  } catch {}
-  try {
-    if (scannerManage && typeof scannerManage.destroyContext === 'function') await scannerManage.destroyContext();
+    await stopManageScanner({ destroy: true });
   } catch {}
   try {
     if (successTimer.id) { clearTimeout(successTimer.id); successTimer.id = null; }
@@ -393,6 +390,8 @@ const initManageScanner = async () => {
       container = document.getElementById('div-ui-container-manage');
     }
     if (scannerManageApi) {
+      // make sure camera is fully stopped/hidden before re-binding the UI element
+      await stopManageScanner();
       if (container) await scannerManageApi.setUIElement(container);
       await scannerManageApi.show();
       manageState.value.running = true;
@@ -417,12 +416,24 @@ const initManageScanner = async () => {
   }
 };
 
-const stopManageScanner = async () => {
+const stopManageScanner = async (options = {}) => {
+  const { destroy = false } = options;
   try {
     if (scannerManageApi && typeof scannerManageApi.stop === 'function') await scannerManageApi.stop();
+    if (scannerManageApi && typeof scannerManageApi.hide === 'function') await scannerManageApi.hide();
     manageState.value.running = false;
   } catch (e) {
     console.error(e);
+  } finally {
+    if (destroy) {
+      try {
+        if (scannerManageApi && typeof scannerManageApi.destroyContext === 'function') await scannerManageApi.destroyContext();
+      } catch (err) {
+        console.error('destroy scanner context', err);
+      }
+      scannerManageApi = null;
+      scannerManage = null;
+    }
   }
 };
 
