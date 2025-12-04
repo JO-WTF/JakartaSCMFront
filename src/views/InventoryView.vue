@@ -239,7 +239,6 @@ const highlightPulse = ref(false);
 let highlightTimer = null;
 const lastHighlightedDn = ref('');
 let refocusTimer = null;
-let lastAgingPayload = { dn: '', pm: '' };
 const agingMessage = ref('');
 const agingInFlight = ref(false);
 const agingSuccess = ref(false);
@@ -671,7 +670,6 @@ const triggerAgingCheck = () => {
 const sendAgingUpdate = async (dn, pm) => {
   try {
     if (!dn || !pm) return;
-    if (lastAgingPayload.dn === dn && lastAgingPayload.pm === pm) return;
     const API_BASE = getApiBase();
     if (!API_BASE) {
       agingMessage.value = formatAgingSuccess(dn);
@@ -688,7 +686,6 @@ const sendAgingUpdate = async (dn, pm) => {
       return;
     }
     agingInFlight.value = true;
-    lastAgingPayload = { dn, pm };
     const url = API_BASE.replace(/\/+$/, '') + '/api/aging-orders/pm-location';
     const body = { pm_location: pm, order_name: dn };
     const res = await fetch(url, {
