@@ -76,6 +76,9 @@
         <div id="div-ui-container-manage">
           <div class="dce-video-container"></div>
         </div>
+        <div class="scan-readout" v-if="lastScanDisplay">
+          {{ lastScanDisplay }}
+        </div>
       </section>
 
       <!-- DN input + controls -->
@@ -160,6 +163,7 @@ import { useRouter } from 'vue-router';
 import { getApiBase } from '../utils/env.js';
 import { useI18n } from '../i18n/useI18n';
 import { isValidDn } from '../utils/dn.js';
+import { normalizeDnWithSuffix } from '../utils/dn.js';
 import { createScanner } from '../composables/useScanner';
 import LanguageSwitcher from '../components/LanguageSwitcher.vue';
 import '../assets/css/scan.css';
@@ -234,6 +238,7 @@ const lastScanned = ref('');
 const lastScannedAt = ref(0);
 const scanCooldownMs = 500; // ms
 let agingMessageTimer = null;
+const lastScanDisplay = ref('');
 
 const setMode = async (m) => {
   mode.value = m;
@@ -481,19 +486,20 @@ const triggerHighlight = (dn) => {
 
 const onCodeScannedManage = async (code) => {
   try {
-    const v = String(code || '').toUpperCase();
+    const raw = String(code || '');
+    const v = normalizeDnWithSuffix(raw);
+    lastScanDisplay.value = raw || v;
     // dedupe: ignore same code within cooldown window
     const now = Date.now();
     if (v && v === lastScanned.value && (now - lastScannedAt.value) < scanCooldownMs) return;
     lastScanned.value = v;
     lastScannedAt.value = now;
 
-    manageState.value.isValid = isValidDn(v);
+    if (!isValidDn(v)) return; // only populate input when DN is valid
+    manageState.value.isValid = true;
     manageState.value.dnNumber = v;
-    if (manageState.value.isValid) {
-      onDNEnter();
-      triggerHighlight(v);
-    }
+    onDNEnter();
+    triggerHighlight(v);
 
     // Keep scanner running so it continues to scan for new codes.
     // We intentionally do NOT stop the scanner or set hasDN here.
@@ -504,7 +510,7 @@ const onCodeScannedManage = async (code) => {
 };
 
 const onDNInputManage = () => {
-  manageState.value.dnNumber = (dnInputManage.value?.value || '').toUpperCase();
+  manageState.value.dnNumber = normalizeDnWithSuffix(dnInputManage.value?.value || '');
   manageState.value.isValid = isValidDn(manageState.value.dnNumber);
   if (!manageState.value.isValid) {
     agingMessage.value = '';
