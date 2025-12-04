@@ -59,18 +59,15 @@
         <!-- PM List / Create area: show table when mode is 'use', else show create UI below -->
         <div class="pm-list" style="margin-top:16px">
           <div v-if="mode === 'use'">
-            <div class="pm-list-header" style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap">
-              <div class="pm-list-title">{{ t('pm.list.title') || 'Available PMs' }}</div>
-              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap">
-                <a-input
-                  v-model:value="pmFilter"
-                  size="small"
-                  allow-clear
-                  :placeholder="filterPlaceholder"
-                  style="width: 200px"
-                />
-                <a-button class="pm-refresh-btn" size="small" @click="fetchPMList">{{ t('pm.list.refresh') || 'Refresh' }}</a-button>
-              </div>
+            <div class="pm-list-header" style="display:flex; align-items:center; gap:8px; flex-wrap:nowrap">
+              <a-input
+                v-model:value="pmFilter"
+                size="small"
+                allow-clear
+                :placeholder="filterPlaceholder"
+                style="flex:1; min-width:0"
+              />
+              <a-button class="pm-refresh-btn" size="small" style="flex-shrink:0" @click="fetchPMList">{{ t('pm.list.refresh') || 'Refresh' }}</a-button>
             </div>
             <div v-if="pmLoading" style="margin-top:8px">
               <a-spin class="pm-loading" />
