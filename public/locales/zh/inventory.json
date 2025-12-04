@@ -27,6 +27,8 @@
   "pm.inventory.success.outbound": "出库成功",
   "pm.inventory.success.default": "操作成功",
   "noInventory": "暂无库存",
+  "usePDA": "使用 PDA",
+  "useCamera": "使用相机",
   "pmLocation": "仓库",
   "orderName": "DN 编码",
   "shipmentNo": "运单号",

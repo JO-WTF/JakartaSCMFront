@@ -927,6 +927,12 @@
   gap: 8px;
 }
 
+.inventory-view .camera-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
 /* Match PM toggle button styling */
 .inventory-view .mode-switcher .ant-btn {
   border-radius: 10px;

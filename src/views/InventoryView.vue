@@ -67,8 +67,17 @@
 
     <!-- Manage / Count Mode -->
     <div v-else-if="mode === 'manage' || mode === 'count'" class="content-section">
+      <div class="camera-toggle">
+        <a-button :type="!useCamera ? 'primary' : 'default'" size="small" @click="setCameraMode(false)">
+          {{ t('usePDA') || '使用 PDA' }}
+        </a-button>
+        <a-button :type="useCamera ? 'primary' : 'default'" size="small" @click="setCameraMode(true)">
+          {{ t('useCamera') || '使用相机' }}
+        </a-button>
+      </div>
       <!-- Scanner container -->
       <section
+        v-if="useCamera"
         id="container-manage"
         class="scan-area container"
         v-show="!manageState.hasDN"
@@ -170,6 +179,7 @@ import '../assets/css/scan.css';
 
 const pmName = ref('');
 const mode = ref('count');
+const useCamera = ref(false);
 const loading = ref(false);
 const data = ref({ ok: false, pm_name: '', total: 0, items: [] });
 const filterText = ref('');
@@ -249,13 +259,29 @@ const setMode = async (m) => {
   }
   if (m === 'manage' || m === 'count') {
     await nextTick();
-    await initManageScanner();
+    if (useCamera.value) {
+      await initManageScanner();
+    } else {
+      await stopManageScanner({ destroy: true });
+    }
     focusDNInput();
   }
 };
 
 const goToPM = () => {
   router.push({ name: 'pm', query: { force: 'choose' } }).catch(() => {});
+};
+
+const setCameraMode = async (flag) => {
+  if (flag === useCamera.value) return;
+  useCamera.value = flag;
+  if (flag) {
+    await initManageScanner();
+  } else {
+    await stopManageScanner({ destroy: true });
+    lastScanDisplay.value = '';
+  }
+  focusDNInput();
 };
 
 const formatDate = (iso) => {
@@ -367,7 +393,11 @@ onMounted(() => {
   } catch (e) {}
   fetchInventory();
   if (mode.value === 'manage' || mode.value === 'count') {
-    initManageScanner();
+    if (useCamera.value) {
+      initManageScanner();
+    } else {
+      stopManageScanner({ destroy: true });
+    }
     focusDNInput();
   }
 });

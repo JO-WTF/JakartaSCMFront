@@ -27,6 +27,8 @@
   "pm.inventory.success.outbound": "Berhasil keluar inventaris",
   "pm.inventory.success.default": "Berhasil",
   "noInventory": "Tidak ada inventaris",
+  "usePDA": "Gunakan PDA",
+  "useCamera": "Gunakan Kamera",
   "pmLocation": "Gudang",
   "orderName": "Kode DN",
   "shipmentNo": "No. Pengiriman",

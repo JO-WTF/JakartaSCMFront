@@ -27,6 +27,8 @@
   "pm.inventory.success.outbound": "Outbound success",
   "pm.inventory.success.default": "Success",
   "noInventory": "No inventory",
+  "usePDA": "Use PDA",
+  "useCamera": "Use Camera",
   "pmLocation": "Warehouse",
   "orderName": "DN Code",
   "shipmentNo": "Shipment No.",
