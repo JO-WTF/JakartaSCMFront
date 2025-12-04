@@ -677,6 +677,9 @@ const sendAgingUpdate = async (dn, pm) => {
       agingMessage.value = formatAgingSuccess(dn);
       agingSuccess.value = true;
       if (agingMessageTimer) { clearTimeout(agingMessageTimer); agingMessageTimer = null; }
+      manageState.value.dnNumber = '';
+      manageState.value.isValid = false;
+      dnInputManage.value && (dnInputManage.value.value = '');
       agingMessageTimer = setTimeout(() => {
         agingMessage.value = '';
         agingSuccess.value = false;
@@ -711,6 +714,9 @@ const sendAgingUpdate = async (dn, pm) => {
     agingMessage.value = formatAgingSuccess(dn, serverMsg);
     agingSuccess.value = true;
     if (agingMessageTimer) { clearTimeout(agingMessageTimer); agingMessageTimer = null; }
+    manageState.value.dnNumber = '';
+    manageState.value.isValid = false;
+    dnInputManage.value && (dnInputManage.value.value = '');
     agingMessageTimer = setTimeout(() => {
       agingMessage.value = '';
       agingSuccess.value = false;
