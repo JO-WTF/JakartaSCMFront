@@ -26,6 +26,7 @@
   "pm.inventory.success.inbound": "入库成功",
   "pm.inventory.success.outbound": "出库成功",
   "pm.inventory.success.default": "操作成功",
+  "noInventory": "暂无库存",
   "pmLocation": "仓库",
   "orderName": "DN 编码",
   "shipmentNo": "运单号",

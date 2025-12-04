@@ -320,6 +320,10 @@ const fetchInventory = async () => {
     const res = await fetch(url, { method: 'GET' });
 
     if (!res.ok) {
+      if (res.status === 404) {
+        data.value = { ok: false, message: t('noInventory') || '暂无库存', total: 0, items: [] };
+        return;
+      }
       const text = await res.text().catch(() => '');
       throw new Error(`HTTP ${res.status}${text ? ': ' + text : ''}`);
     }

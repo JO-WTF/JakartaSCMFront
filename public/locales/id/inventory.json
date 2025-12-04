@@ -26,6 +26,7 @@
   "pm.inventory.success.inbound": "Berhasil masuk inventaris",
   "pm.inventory.success.outbound": "Berhasil keluar inventaris",
   "pm.inventory.success.default": "Berhasil",
+  "noInventory": "Tidak ada inventaris",
   "pmLocation": "Gudang",
   "orderName": "Kode DN",
   "shipmentNo": "No. Pengiriman",
