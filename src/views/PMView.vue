@@ -80,7 +80,7 @@
                 <a-card class="pm-item-card" :body-style="{ padding: '12px' }">
                   <div class="pm-item-content">
                     <div class="pm-item-name">{{ item.pm_name || '-' }}</div>
-                    <div class="pm-item-location">{{ formatLocation(item.lng, item.lat) }}</div>
+                    <div class="pm-item-address">{{ item.address || item.pm_location || '-' }}</div>
                   </div>
                   <template #actions>
                     <a-button class="pm-select-btn" type="primary" size="small" @click="doSelectPM(item)">{{ t('pm.select') || 'Select' }}</a-button>
@@ -187,7 +187,14 @@ const filteredPMs = computed(() => {
   i18nVersion.value;
   const keyword = (pmFilter.value || '').trim().toLowerCase();
   if (!keyword) return pmList.value || [];
-  return (pmList.value || []).filter((pm) => (pm?.pm_name || '').toLowerCase().includes(keyword));
+  const tokens = keyword.split(/\s+/).filter(Boolean);
+  return (pmList.value || []).filter((pm) => {
+    const name = (pm?.pm_name || '').toLowerCase();
+    const address = (pm?.address || pm?.pm_location || '').toLowerCase();
+    const haystack = `${name} ${address}`.trim();
+    // fuzzy-ish: all tokens must appear somewhere in name or address
+    return tokens.every((t) => haystack.includes(t));
+  });
 });
 const filterPlaceholder = computed(() => {
   i18nVersion.value;
@@ -573,11 +580,17 @@ const submitPM = async () => {
   submitMsg.value = '';
   submitOk.value = false;
   try {
+    // Prefer current map center (visible crosshair) as source of truth for coords.
+    const center = getCenterCoords();
     const lnglat = marker.value ? marker.value.getLngLat() : null;
+    const lng = Number.isFinite(center?.lng) ? center.lng : (lnglat ? lnglat.lng : null);
+    const lat = Number.isFinite(center?.lat) ? center.lat : (lnglat ? lnglat.lat : null);
+    const address = (displayAddress.value || addressQuery.value || '').trim();
     const payload = {
       pm_name: pmName.value,
-      lng: lnglat ? String(lnglat.lng) : null,
-      lat: lnglat ? String(lnglat.lat) : null,
+      lng: lng != null ? String(lng) : null,
+      lat: lat != null ? String(lat) : null,
+      address: address || null,
     };
 
     const API_BASE = getApiBase();
