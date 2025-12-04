@@ -38,7 +38,8 @@ const routes = [
     component: () => import('../views/MapView.vue'),
   },
   {
-    path: '/pm',
+    path: '/choose-pm',
+    alias: ['/pm'],
     name: 'pm',
     component: () => import('../views/PMView.vue'),
   },
@@ -80,6 +81,19 @@ router.beforeEach((to, from, next) => {
     const query = to.fullPath && to.fullPath !== '/' ? { redirect: to.fullPath } : {};
     next({ name: 'phone', query });
     return;
+  }
+
+  if (to.name === 'pm') {
+    const forceChoose = to?.query?.force === 'choose' || to?.query?.force === '1';
+    try {
+      const selectedPm = localStorage.getItem('selected_pm_name');
+      if (selectedPm && !forceChoose) {
+        next({ name: 'inventory' });
+        return;
+      }
+    } catch (e) {
+      // ignore localStorage access errors and continue to pm
+    }
   }
 
   next();

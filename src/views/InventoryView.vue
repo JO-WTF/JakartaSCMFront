@@ -255,7 +255,7 @@ const setMode = async (m) => {
 };
 
 const goToPM = () => {
-  router.push({ name: 'pm' }).catch(() => {});
+  router.push({ name: 'pm', query: { force: 'choose' } }).catch(() => {});
 };
 
 const formatDate = (iso) => {
