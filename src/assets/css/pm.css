@@ -86,12 +86,26 @@
 }
 
 .pm-view .pm-refresh-btn {
-  padding: 4px 8px !important; /* tighter padding */
+  padding: 0 10px !important; /* tighter padding */
   min-width: 56px !important; /* reduce default button width */
   max-width: 120px !important; /* cap maximum width */
   height: 28px !important;
+  line-height: 28px !important;
   font-size: 13px !important;
   border-radius: 8px !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+}
+.pm-view .pm-list .ant-input,
+.pm-view .pm-list .ant-input-affix-wrapper {
+  height: 28px !important;
+  padding: 0 10px !important;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 28px;
+  display: flex;
+  align-items: center;
 }
 
 /* ==================== Map Container ==================== */
