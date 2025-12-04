@@ -2,7 +2,7 @@
   "pm.title": "Manajemen PM",
   "pm.use_existing": "Gunakan PM yang ada",
   "pm.create_mode": "Buat PM",
-  "pm.search.placeholder": "Ketik alamat lalu tekan Enter atau klik Cari",
+  "pm.search.placeholder": "Masukkan alamat untuk memfilter",
   "pm.search.button": "Cari",
   "pm.use_current": "Gunakan lokasi saat ini",
   "pm.address.hint": "Pastikan lokasi Pool Mover yang ditampilkan di peta benar. Jika lokasi tidak akurat, klik alamat, masukkan lokasi yang benar lalu cari.",

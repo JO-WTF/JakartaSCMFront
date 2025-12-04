@@ -2,7 +2,7 @@
   "pm.title": "PM 管理",
   "pm.use_existing": "使用已有 PM",
   "pm.create_mode": "创建 PM",
-  "pm.search.placeholder": "输入地址后回车或点击搜索",
+  "pm.search.placeholder": "输入地址进行筛选",
   "pm.search.button": "搜索",
   "pm.use_current": "使用当前位置",
   "pm.address.hint": "请确认地图中展示的Pool Mover 位置正确。如果位置不准确，点击地址，输入正确的位置并搜索。",

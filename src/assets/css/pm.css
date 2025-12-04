@@ -913,6 +913,54 @@
   gap: 8px;
 }
 
+/* Match PM toggle button styling */
+.inventory-view .mode-switcher .ant-btn {
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 16px;
+  height: auto;
+  padding: 10px 16px;
+  transition: all 0.3s ease;
+  border: 1px solid var(--border-light, #2a3a66);
+  background: var(--input-bg, #0e1631);
+  color: var(--fg, #eaf2ff);
+}
+
+.inventory-view .mode-switcher .ant-btn-primary {
+  background: var(--accent, #69a8ff);
+  border-color: var(--accent, #69a8ff);
+  color: #07122b;
+  box-shadow: 0 2px 8px rgba(105, 168, 255, 0.3);
+}
+
+.inventory-view .mode-switcher .ant-btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover, #5891e6);
+  border-color: var(--accent-hover, #5891e6);
+  color: #07122b;
+  box-shadow: 0 4px 12px rgba(105, 168, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+.inventory-view .mode-switcher .ant-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.inventory-view .mode-switcher .ant-btn-primary:disabled,
+.inventory-view .mode-switcher .ant-btn-primary.ant-btn-disabled {
+  background: var(--input-bg, #0e1631);
+  border-color: var(--border, #1f2a4d);
+  color: var(--muted, #8aa2c8);
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.inventory-view .mode-switcher .ant-btn-default:hover:not(:disabled) {
+  border-color: var(--accent, #69a8ff);
+  color: var(--accent, #69a8ff);
+  background: #0f1730;
+}
+
 .inventory-view .content-section {
   background: var(--card-bg, #101831);
   border: 1px solid var(--border, #1f2a4d);
