@@ -672,13 +672,10 @@ const formatCoordinate = (val) => {
 const persistPhoneNumber = (value) => {
   const trimmed = (value || '').trim();
   phoneNumber.value = trimmed;
-  if (!isLoggedIn.value) {
-    safeSetLocalStorageItem(PHONE_STORAGE_KEY, trimmed);
-  }
+  safeSetLocalStorageItem(PHONE_STORAGE_KEY, trimmed);
 };
 
 const persistDriverName = (value) => {
-  if (isLoggedIn.value) return;
   const trimmed = (value || '').trim();
   safeSetLocalStorageItem(DRIVER_NAME_STORAGE_KEY, trimmed);
 };
@@ -721,11 +718,13 @@ const onDriverPhoneInput = () => {
 const clearDriverName = () => {
   state.driverName = '';
   state.driverNameMissing = false;
+  persistDriverName('');
 };
 
 const clearDriverPhone = () => {
   state.driverPhone = '';
   state.driverPhoneMissing = false;
+  persistPhoneNumber('');
 };
 
 // resolveClientProfile, getStoredUserName, uploadWithProgress 现在来自 composables
@@ -988,17 +987,17 @@ onMounted(async () => {
     return;
   }
 
-  if (!isLoggedIn.value) {
-    const savedDriverName = safeGetLocalStorageItem(DRIVER_NAME_STORAGE_KEY);
+  const savedDriverName = safeGetLocalStorageItem(DRIVER_NAME_STORAGE_KEY);
+  if (savedDriverName) {
     state.driverName = savedDriverName;
-    const savedPhone = safeGetLocalStorageItem(PHONE_STORAGE_KEY) || currentPhone;
+    state.driverNameMissing = false;
+  }
+
+  const savedPhone = safeGetLocalStorageItem(PHONE_STORAGE_KEY) || currentPhone;
+  if (savedPhone) {
     state.driverPhone = savedPhone;
-    if (state.driverPhone) {
-      persistPhoneNumber(state.driverPhone);
-    }
-  } else {
-    state.driverName = '';
-    state.driverPhone = '';
+    state.driverPhoneMissing = false;
+    persistPhoneNumber(state.driverPhone);
   }
 
   if (storedUserNameRef.value) {
