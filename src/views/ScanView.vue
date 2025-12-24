@@ -229,7 +229,7 @@ import { createScanner } from '../composables/useScanner';
 import '../assets/css/scan.css';
 import { isValidDn } from '../utils/dn.js';
 import { STATUS_DELIVERY_ITEMS, STATUS_DELIVERY_VALUES, STATUS_SITE_ORDERED_LIST } from '../config.js';
-import { getCookie, setCookie, deleteCookie } from '../utils/cookie.js';
+import { deleteCookie } from '../utils/cookie.js';
 
 const PHONE_COOKIE_KEY = 'phone_number';
 const DRIVER_NAME_STORAGE_KEY = 'scan_driver_name';
@@ -245,9 +245,6 @@ const { uploadWithProgress } = useUpload();
 const { getStoredUserName } = useAuth();
 const { isMobile: isMobileClient, browserId: browserIdentifier } = useDeviceDetection();
 const router = useRouter();
-const phoneNumber = ref(getCookie(PHONE_COOKIE_KEY) || '');
-const storedUserNameRef = ref('');
-const isLoggedIn = computed(() => !!storedUserNameRef.value);
 
 const safeGetLocalStorageItem = (key) => {
   if (typeof window === 'undefined' || !window.localStorage || !key) return '';
@@ -271,21 +268,13 @@ const safeSetLocalStorageItem = (key, value) => {
   }
 };
 
+const phoneNumber = ref(safeGetLocalStorageItem(PHONE_STORAGE_KEY) || '');
+const storedUserNameRef = ref('');
+const isLoggedIn = computed(() => !!storedUserNameRef.value);
+
 const refreshPhoneNumber = () => {
   const localPhone = safeGetLocalStorageItem(PHONE_STORAGE_KEY);
-  if (localPhone) {
-    phoneNumber.value = localPhone;
-    const currentCookie = getCookie(PHONE_COOKIE_KEY);
-    if (localPhone !== currentCookie) {
-      setCookie(PHONE_COOKIE_KEY, localPhone, 365);
-    }
-    return phoneNumber.value;
-  }
-  const stored = getCookie(PHONE_COOKIE_KEY);
-  phoneNumber.value = stored || '';
-  if (phoneNumber.value) {
-    safeSetLocalStorageItem(PHONE_STORAGE_KEY, phoneNumber.value);
-  }
+  phoneNumber.value = localPhone || '';
   return phoneNumber.value;
 };
 
@@ -686,7 +675,6 @@ const persistPhoneNumber = (value) => {
   if (!isLoggedIn.value) {
     safeSetLocalStorageItem(PHONE_STORAGE_KEY, trimmed);
   }
-  setCookie(PHONE_COOKIE_KEY, trimmed, 365);
 };
 
 const persistDriverName = (value) => {

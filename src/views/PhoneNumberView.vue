@@ -57,9 +57,31 @@ import PrivacyPolicyModal from '../components/PrivacyPolicyModal.vue';
 import { useI18n } from '../i18n/useI18n';
 import { getCookie, setCookie } from '../utils/cookie.js';
 
-const PHONE_COOKIE_KEY = 'phone_number';
+const PHONE_STORAGE_KEY = 'phone_number';
 const PRIVACY_AGREED_KEY = 'privacy_agreed';
 const DEFAULT_COUNTRY = 'ID';
+
+const safeGetLocalStorageItem = (key) => {
+  if (typeof window === 'undefined' || !window.localStorage || !key) return '';
+  try {
+    return window.localStorage.getItem(key) || '';
+  } catch {
+    return '';
+  }
+};
+
+const safeSetLocalStorageItem = (key, value) => {
+  if (typeof window === 'undefined' || !window.localStorage || !key) return;
+  try {
+    if (value) {
+      window.localStorage.setItem(key, value);
+    } else {
+      window.localStorage.removeItem(key);
+    }
+  } catch {
+    // ignore write errors (private mode, etc.)
+  }
+};
 
 const safeParsePhone = (value) => {
   if (!value || typeof value !== 'string') return null;
@@ -93,7 +115,9 @@ const router = useRouter();
 const route = useRoute();
 const phoneInput = ref(null);
 
-const storedPhone = getCookie(PHONE_COOKIE_KEY) || '';
+const getStoredPhone = () => safeGetLocalStorageItem(PHONE_STORAGE_KEY);
+
+const storedPhone = getStoredPhone();
 
 // 使用版本号强制响应式更新
 const i18nVersion = ref(0);
@@ -225,13 +249,13 @@ const confirmPhone = async () => {
 
   isSubmitting.value = true;
   try {
-    // 转换为本地格式（0 开头）保存到 cookie
+    // 转换为本地格式（0 开头）保存
     // 将 E.164 格式 (+6281234567890) 转换为本地格式 (081234567890)
     const nationalNumber = parsed.formatNational();
     // 移除所有非数字字符，确保存储纯数字格式
     const phoneToStore = nationalNumber.replace(/\D/g, '');
     
-    setCookie(PHONE_COOKIE_KEY, phoneToStore, 365);
+    safeSetLocalStorageItem(PHONE_STORAGE_KEY, phoneToStore);
     state.phone = parsed.formatInternational();
     const redirectTo = typeof route.query.redirect === 'string' && route.query.redirect ? route.query.redirect : null;
     await router.replace(redirectTo || { name: 'scan' });

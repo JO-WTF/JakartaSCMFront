@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { getCookie } from '../utils/cookie.js';
 
 const routes = [
   {
@@ -66,7 +65,12 @@ router.beforeEach((to, from, next) => {
     return;
   }
 
-  const storedPhone = getCookie('phone_number');
+  let storedPhone = '';
+  try {
+    storedPhone = localStorage.getItem('phone_number') || '';
+  } catch {
+    storedPhone = '';
+  }
 
   if (to.name === 'phone') {
     if (storedPhone) {
