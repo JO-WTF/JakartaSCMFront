@@ -63,5 +63,6 @@
   "contactInfoUnavailable": "暂无数据",
   "contactInfoErrorPrefix": "联系人信息获取失败：",
   "privacyPolicyTitle": "隐私政策",
-  "privacyAgreeButton": "我已阅读并同意"
+  "privacyAgreeButton": "我已阅读并同意",
+  "privacyAgreeButtonDisabled": "请滑动阅读隐私协议"
 }

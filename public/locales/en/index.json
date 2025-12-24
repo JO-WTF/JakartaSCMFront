@@ -63,5 +63,6 @@
   "contactInfoUnavailable": "Not available",
   "contactInfoErrorPrefix": "Contact info failed:",
   "privacyPolicyTitle": "Privacy Policy",
-  "privacyAgreeButton": "I have read and agree"
+  "privacyAgreeButton": "I have read and agree",
+  "privacyAgreeButtonDisabled": "Please scroll to read the privacy policy"
 }

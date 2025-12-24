@@ -63,5 +63,6 @@
   "contactInfoUnavailable": "Tidak tersedia",
   "contactInfoErrorPrefix": "Gagal mengambil kontak:",
   "privacyPolicyTitle": "Kebijakan Privasi",
-  "privacyAgreeButton": "Saya telah membaca dan menyetujui"
+  "privacyAgreeButton": "Saya telah membaca dan menyetujui",
+  "privacyAgreeButtonDisabled": "Mohon gulir untuk membaca kebijakan privasi"
 }

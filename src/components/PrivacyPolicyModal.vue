@@ -29,7 +29,7 @@
           </div>
 
           <!-- Scrollable Content -->
-          <div class="privacy-modal-content" ref="contentRef">
+          <div class="privacy-modal-content" ref="contentRef" @scroll="handleContentScroll">
             <div v-if="policyLang === 'en'" class="privacy-text">
               <h3>Huawei Indonesian Fast Track Application</h3>
               <h4>Personal Statement</h4>
@@ -418,7 +418,7 @@
               @click="handleAgree"
               :disabled="!canAgree"
             >
-              {{ t('privacyAgreeButton') }}
+              {{ canAgree ? t('privacyAgreeButton') : t('privacyAgreeButtonDisabled') }}
             </button>
           </div>
         </div>
@@ -456,7 +456,7 @@ const t = (key) => {
 
 const policyLang = ref('id'); // Default to Indonesian
 const contentRef = ref(null);
-const canAgree = ref(true);
+const canAgree = ref(false);
 const titleId = 'privacy-modal-title';
 
 const handleAgree = () => {
@@ -470,21 +470,31 @@ const handleOverlayClick = () => {
   }
 };
 
-// Reset scroll when language changes
-watch(policyLang, async () => {
+const handleContentScroll = () => {
+  if (!contentRef.value) return;
+  const { scrollTop, scrollHeight, clientHeight } = contentRef.value;
+  const atBottom = scrollTop + clientHeight >= scrollHeight - 4;
+  if (atBottom) {
+    canAgree.value = true;
+  }
+};
+
+const resetScrollState = async () => {
   await nextTick();
   if (contentRef.value) {
     contentRef.value.scrollTop = 0;
   }
-});
+  canAgree.value = false;
+  handleContentScroll();
+};
+
+// Reset scroll when language changes
+watch(policyLang, resetScrollState);
 
 // Reset scroll when modal opens
 watch(() => props.visible, async (newVal) => {
   if (newVal) {
-    await nextTick();
-    if (contentRef.value) {
-      contentRef.value.scrollTop = 0;
-    }
+    await resetScrollState();
   }
 });
 
@@ -614,6 +624,9 @@ onUnmounted(() => {
   flex-shrink: 0;
   display: flex;
   justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
 }
 
 .privacy-agree-btn {
@@ -637,7 +650,10 @@ onUnmounted(() => {
 
 .privacy-agree-btn:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
+  background: #e2e8f0;
+  color: #94a3b8;
+  box-shadow: none;
+  opacity: 1;
 }
 
 /* Scrollbar styling */
