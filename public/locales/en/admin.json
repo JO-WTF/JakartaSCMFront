@@ -1,7 +1,7 @@
 {
   "title": "Local Transport Management System (Indonesia)",
   "dn.label": "DN Number (supports multiple lines/commas/spaces; multiple means batch query)",
-  "dn.tip": "Hint: DN numbers are 14-18 chars. They must start with 3-5 uppercase letters, and the rest are digits.",
+  "dn.tip": "Hint: DN numbers are 2-5 uppercase letters followed by 10-15 digits.",
   "statusDelivery.label": "Delivery Status",
   "statusDelivery.filter.any": "(Any)",
   "statusDelivery.filter.notEmpty": "Any Non-empty",

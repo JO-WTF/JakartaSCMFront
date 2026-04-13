@@ -6,7 +6,7 @@
   "title": "Manajemen Catatan Pengajuan DN",
   "dn.label": "Nomor DN (mendukung baris/komma/spasi; lebih dari satu = pencarian batch)",
   "dn.placeholder": "Contoh:\nDN123...\nDN456...",
-  "dn.tip": "Petunjuk: Nomor DN harus 14-18 karakter. Harus diawali 3-5 huruf besar, sisanya angka.",
+  "dn.tip": "Petunjuk: Nomor DN harus 2-5 huruf besar diikuti 10-15 angka.",
   "statusDelivery.label": "Status Pengiriman",
   "statusDelivery.filter.any": "(Apa saja)",
   "statusDelivery.filter.notEmpty": "Apa saja (tidak kosong)",
