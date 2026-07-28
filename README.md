@@ -32,8 +32,6 @@ Create a `.env` file (or copy `.env` to `.env.local`) and provide the values app
 VITE_API_BASE=https://api.example.com
 VITE_MAPBOX_ACCESS_TOKEN=pk.your-mapbox-token
 VITE_DYNAMSOFT_LICENSE_KEY=your-dynamsoft-license
-# Optional; defaults to `${VITE_API_BASE}/api/find-sg-lpn-infos`
-VITE_FIND_SG_LPN_URL=
 ```
 
 These variables are read at build time by Vite. Ensure any deployment platform exposes the `VITE_*` variables during the build step so the application can access them at runtime.
