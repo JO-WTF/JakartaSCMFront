@@ -9,6 +9,13 @@ const extractApiError = (payload, fallback) => {
   return fallback;
 };
 
+const appendRequestContext = (message, { status, url } = {}) => {
+  const parts = [message || 'Request failed'];
+  if (status) parts.push(`status ${status}`);
+  if (url) parts.push(url);
+  return parts.join(' · ');
+};
+
 export async function findSgLpnInfos(orderNumber, options = {}) {
   const trimmedOrderNumber = String(orderNumber || '').trim();
   if (!trimmedOrderNumber) {
@@ -21,13 +28,24 @@ export async function findSgLpnInfos(orderNumber, options = {}) {
     pageNum: Number(options.pageNum || 1),
   };
 
-  const response = await fetch(getFindSgLpnUrl(), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-    },
-    body: JSON.stringify(body),
-  });
+  const requestUrl = getFindSgLpnUrl();
+  let response = null;
+  try {
+    response = await fetch(requestUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+      },
+      body: JSON.stringify(body),
+    });
+  } catch (err) {
+    throw new Error(
+      appendRequestContext(
+        `Network request failed: ${err?.message || err}. Check VITE_API_BASE, backend availability, and CORS.`,
+        { url: requestUrl }
+      )
+    );
+  }
 
   let payload = null;
   try {
@@ -37,11 +55,20 @@ export async function findSgLpnInfos(orderNumber, options = {}) {
   }
 
   if (!response.ok) {
-    throw new Error(extractApiError(payload, `HTTP ${response.status}`));
+    throw new Error(
+      appendRequestContext(extractApiError(payload, `HTTP ${response.status}`), {
+        status: response.status,
+        url: requestUrl,
+      })
+    );
   }
 
   if (normalizeApiCode(payload?.code) !== '200') {
-    throw new Error(extractApiError(payload, `API code ${payload?.code ?? 'unknown'}`));
+    throw new Error(
+      appendRequestContext(extractApiError(payload, `API code ${payload?.code ?? 'unknown'}`), {
+        url: requestUrl,
+      })
+    );
   }
 
   if (!Array.isArray(payload?.list)) {
