@@ -1,6 +1,4 @@
-import { getFindSgLpnAppKey, getFindSgLpnHwId } from '../utils/env.js';
-
-const FIND_SG_LPN_INFOS_URL = 'https://apigw-cn-south02.huawei.com/api/app_000000035599/findSgLpnInfos';
+import { getFindSgLpnAppKey, getFindSgLpnHwId, getFindSgLpnUrl } from '../utils/env.js';
 
 const normalizeApiCode = (value) => String(value ?? '').trim();
 
@@ -27,7 +25,7 @@ export async function findSgLpnInfos(orderNumber, options = {}) {
     pageNum: Number(options.pageNum || 1),
   };
 
-  const response = await fetch(FIND_SG_LPN_INFOS_URL, {
+  const response = await fetch(getFindSgLpnUrl(), {
     method: 'POST',
     headers: {
       'X-HW-ID': getFindSgLpnHwId(),

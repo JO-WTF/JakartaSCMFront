@@ -49,6 +49,12 @@ export const getFindSgLpnAppKey = () => {
   return '';
 };
 
+export const getFindSgLpnUrl = () => {
+  const envValue = readImportMetaEnv('VITE_FIND_SG_LPN_URL');
+  if (envValue) return envValue;
+  return 'https://apigw-cn-south02.huawei.com/api/app_000000035599/findSgLpnInfos';
+};
+
 export const getImageBaseUrl = () => {
   const envValue = readImportMetaEnv('VITE_IMG_BASE');
   if (envValue) {

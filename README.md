@@ -32,6 +32,7 @@ Create a `.env` file (or copy `.env` to `.env.local`) and provide the values app
 VITE_API_BASE=https://api.example.com
 VITE_MAPBOX_ACCESS_TOKEN=pk.your-mapbox-token
 VITE_DYNAMSOFT_LICENSE_KEY=your-dynamsoft-license
+VITE_FIND_SG_LPN_URL=https://apigw-cn-south02.huawei.com/api/app_000000035599/findSgLpnInfos
 VITE_FIND_SG_LPN_APPKEY=your-find-sg-lpn-app-key
 # Optional; defaults to com.huawei.ipaas.roma.data.subject
 VITE_FIND_SG_LPN_HW_ID=com.huawei.ipaas.roma.data.subject
