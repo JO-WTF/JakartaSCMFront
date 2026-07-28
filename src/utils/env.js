@@ -38,8 +38,6 @@ export const getDynamsoftLicenseKey = () => {
 };
 
 export const getFindSgLpnUrl = () => {
-  const envValue = readImportMetaEnv('VITE_FIND_SG_LPN_URL');
-  if (envValue) return envValue;
   const apiBase = getApiBase().replace(/\/+$/, '');
   return `${apiBase}/api/find-sg-lpn-infos`;
 };
