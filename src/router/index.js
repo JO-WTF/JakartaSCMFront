@@ -27,6 +27,11 @@ const routes = [
     component: () => import('../views/DashboardView.vue'),
   },
   {
+    path: '/check',
+    name: 'check',
+    component: () => import('../views/CheckView.vue'),
+  },
+  {
     path: '/routes',
     name: 'routes',
     component: () => import('../views/RouteCalculatorView.vue'),
