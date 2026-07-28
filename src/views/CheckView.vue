@@ -161,8 +161,9 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { createScanner } from '../composables/useScanner.js';
 import { findSgLpnInfos } from '../services/checkApi.js';
+import { getApiBase } from '../utils/env.js';
 
-const API_BASE = 'http://aif.paas.his-beta.huawei.com/logistics-document-recognition';
+const API_BASE = getApiBase();
 const DEDUP_MS = 1200;
 const SCAN_MODE = Object.freeze({ DN: 'dn', BOX: 'box' });
 
@@ -612,7 +613,7 @@ function buildReportPayload(checker) {
 
 async function postReport(payload) {
   try {
-    const res = await fetch(`${API_BASE}/dn_checker`, {
+    const res = await fetch(`${API_BASE}/api/dn/check_result`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

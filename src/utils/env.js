@@ -37,22 +37,11 @@ export const getDynamsoftLicenseKey = () => {
   return '';
 };
 
-export const getFindSgLpnHwId = () => {
-  const envValue = readImportMetaEnv('VITE_FIND_SG_LPN_HW_ID');
-  if (envValue) return envValue;
-  return 'com.huawei.ipaas.roma.data.subject';
-};
-
-export const getFindSgLpnAppKey = () => {
-  const envValue = readImportMetaEnv('VITE_FIND_SG_LPN_APPKEY');
-  if (envValue) return envValue;
-  return '';
-};
-
 export const getFindSgLpnUrl = () => {
   const envValue = readImportMetaEnv('VITE_FIND_SG_LPN_URL');
   if (envValue) return envValue;
-  return 'https://apigw-cn-south02.huawei.com/api/app_000000035599/findSgLpnInfos';
+  const apiBase = getApiBase().replace(/\/+$/, '');
+  return `${apiBase}/api/find-sg-lpn-infos`;
 };
 
 export const getImageBaseUrl = () => {

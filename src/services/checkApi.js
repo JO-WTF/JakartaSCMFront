@@ -1,10 +1,11 @@
-import { getFindSgLpnAppKey, getFindSgLpnHwId, getFindSgLpnUrl } from '../utils/env.js';
+import { getFindSgLpnUrl } from '../utils/env.js';
 
 const normalizeApiCode = (value) => String(value ?? '').trim();
 
 const extractApiError = (payload, fallback) => {
   if (payload?.errorMsg) return String(payload.errorMsg);
   if (payload?.message) return String(payload.message);
+  if (payload?.detail) return String(payload.detail);
   return fallback;
 };
 
@@ -12,11 +13,6 @@ export async function findSgLpnInfos(orderNumber, options = {}) {
   const trimmedOrderNumber = String(orderNumber || '').trim();
   if (!trimmedOrderNumber) {
     throw new Error('order_number is required');
-  }
-
-  const appKey = getFindSgLpnAppKey();
-  if (!appKey) {
-    throw new Error('VITE_FIND_SG_LPN_APPKEY is not configured');
   }
 
   const body = {
@@ -28,8 +24,6 @@ export async function findSgLpnInfos(orderNumber, options = {}) {
   const response = await fetch(getFindSgLpnUrl(), {
     method: 'POST',
     headers: {
-      'X-HW-ID': getFindSgLpnHwId(),
-      'X-HW-APPKEY': appKey,
       'Content-Type': 'application/json; charset=utf-8',
     },
     body: JSON.stringify(body),
