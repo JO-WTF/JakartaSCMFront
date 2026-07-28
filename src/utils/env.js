@@ -37,6 +37,18 @@ export const getDynamsoftLicenseKey = () => {
   return '';
 };
 
+export const getFindSgLpnHwId = () => {
+  const envValue = readImportMetaEnv('VITE_FIND_SG_LPN_HW_ID');
+  if (envValue) return envValue;
+  return 'com.huawei.ipaas.roma.data.subject';
+};
+
+export const getFindSgLpnAppKey = () => {
+  const envValue = readImportMetaEnv('VITE_FIND_SG_LPN_APPKEY');
+  if (envValue) return envValue;
+  return '';
+};
+
 export const getImageBaseUrl = () => {
   const envValue = readImportMetaEnv('VITE_IMG_BASE');
   if (envValue) {
