@@ -13,7 +13,16 @@
           :allow-clear="false"
           :disabled="loading"
         />
-        <a-button type="primary" :loading="loading" @click="fetchResults">Refresh</a-button>
+        <a-input
+          v-model:value="dnFilter"
+          class="dn-filter-input"
+          allow-clear
+          placeholder="DN Number"
+          :disabled="loading"
+          @press-enter="applyFilters"
+        />
+        <a-button type="primary" :loading="loading" @click="applyFilters">Search</a-button>
+        <a-button :disabled="loading || (!dnFilter && !appliedDnFilter)" @click="resetFilters">Reset</a-button>
       </div>
     </header>
 
@@ -40,6 +49,14 @@
         <span class="summary-label">Completed</span>
         <strong>{{ completedCount }}</strong>
       </div>
+      <div>
+        <span class="summary-label">DN Filter</span>
+        <strong>{{ appliedDnFilter || '-' }}</strong>
+      </div>
+      <div>
+        <span class="summary-label">Last Refresh</span>
+        <strong>{{ lastRefreshText || '-' }}</strong>
+      </div>
     </section>
 
     <section class="desktop-table">
@@ -49,6 +66,7 @@
         :loading="loading"
         :pagination="pagination"
         row-key="id"
+        :row-class-name="resolveRowClassName"
         size="middle"
         @change="handleTableChange"
       >
@@ -65,7 +83,10 @@
             <span :class="['status-pill', normalizeStatus(record.status)]">{{ record.status || '-' }}</span>
           </template>
           <template v-else-if="column.key === 'action'">
-            <a-button size="small" @click="openDetail(record)">View</a-button>
+            <div class="row-actions">
+              <a-button size="small" @click="openDetail(record)">View</a-button>
+              <a-button size="small" :loading="printLoadingId === record.id" @click="printRecord(record)">Print</a-button>
+            </div>
           </template>
         </template>
       </a-table>
@@ -73,7 +94,12 @@
 
     <section class="mobile-list">
       <a-spin :spinning="loading">
-        <article v-for="item in items" :key="item.id" class="result-card" @click="openDetail(item)">
+        <article
+          v-for="item in items"
+          :key="item.id"
+          :class="['result-card', { refreshed: isHighlighted(item) }]"
+          @click="openDetail(item)"
+        >
           <div class="card-top">
             <strong>{{ item.dn_number || '-' }}</strong>
             <span :class="['status-pill', normalizeStatus(item.status)]">{{ item.status || '-' }}</span>
@@ -96,6 +122,9 @@
               <dd>{{ item.check_time || '-' }}</dd>
             </div>
           </dl>
+          <div class="card-actions">
+            <a-button size="small" :loading="printLoadingId === item.id" @click.stop="printRecord(item)">Print</a-button>
+          </div>
         </article>
         <div v-if="!loading && !items.length" class="empty-state">No check result records</div>
       </a-spin>
@@ -111,11 +140,15 @@
       v-model:open="detailOpen"
       title="Check Result Detail"
       :footer="null"
-      width="min(920px, calc(100vw - 32px))"
+      width="1200px"
       class="check-detail-modal"
+      wrap-class-name="check-detail-modal-wrap"
     >
       <a-spin :spinning="detailLoading">
         <template v-if="detail">
+          <div class="detail-actions">
+            <a-button type="primary" :loading="pdfExporting" @click="exportDetailPdf">Export PDF</a-button>
+          </div>
           <section class="detail-grid">
             <div v-for="field in detailFields" :key="field.key" class="detail-field">
               <span>{{ field.label }}</span>
@@ -158,10 +191,12 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { getApiBase } from '../utils/env.js';
 
 const API_BASE = getApiBase().replace(/\/+$/, '');
+const AUTO_REFRESH_MS = 15000;
+const HIGHLIGHT_MS = 9000;
 
 const loading = ref(false);
 const detailLoading = ref(false);
@@ -171,8 +206,18 @@ const total = ref(0);
 const page = ref(1);
 const pageSize = ref(20);
 const selectedDate = ref(formatJakartaDate(new Date()));
+const dnFilter = ref('');
+const appliedDnFilter = ref('');
 const detailOpen = ref(false);
 const detail = ref(null);
+const pdfExporting = ref(false);
+const printLoadingId = ref(null);
+const highlightedKeys = ref(new Set());
+const lastRefreshText = ref('');
+
+let lastListSignature = '';
+let highlightTimer = null;
+let autoRefreshTimer = null;
 
 const columns = [
   { title: 'DN Number', dataIndex: 'dn_number', key: 'dn_number', width: 170 },
@@ -182,7 +227,7 @@ const columns = [
   { title: 'Progress', key: 'progress', width: 110 },
   { title: 'Status', dataIndex: 'status', key: 'status', width: 120 },
   { title: 'Created At', dataIndex: 'created_at', key: 'created_at', width: 190 },
-  { title: 'Action', key: 'action', width: 90, fixed: 'right' },
+  { title: 'Action', key: 'action', width: 150, fixed: 'right' },
 ];
 
 const pagination = computed(() => ({
@@ -251,22 +296,104 @@ function buildListUrl() {
   url.searchParams.set('date', selectedDate.value);
   url.searchParams.set('page', String(page.value));
   url.searchParams.set('page_size', String(pageSize.value));
+  if (appliedDnFilter.value) {
+    url.searchParams.set('dn_number', appliedDnFilter.value);
+  }
   return url.toString();
 }
 
-async function fetchResults() {
-  loading.value = true;
-  error.value = '';
+function getRecordKey(record) {
+  return String(record?.id ?? record?.report_id ?? record?.dn_number ?? '');
+}
+
+function getRecordSignature(record) {
+  return JSON.stringify({
+    id: record?.id,
+    report_id: record?.report_id,
+    dn_number: record?.dn_number,
+    lsp: record?.lsp,
+    checker_name: record?.checker_name,
+    check_time: record?.check_time,
+    status: record?.status,
+    box_count: record?.box_count,
+    checked_count: record?.checked_count,
+    created_at: record?.created_at,
+  });
+}
+
+function getListSignature(nextItems, nextTotal) {
+  return JSON.stringify({
+    total: nextTotal,
+    page: page.value,
+    pageSize: pageSize.value,
+    date: selectedDate.value,
+    dn: appliedDnFilter.value,
+    items: nextItems.map((item) => [getRecordKey(item), getRecordSignature(item)]),
+  });
+}
+
+function getChangedVisibleKeys(previousItems, nextItems) {
+  const previousMap = new Map(previousItems.map((item) => [getRecordKey(item), getRecordSignature(item)]));
+  return nextItems
+    .filter((item) => previousMap.get(getRecordKey(item)) !== getRecordSignature(item))
+    .map(getRecordKey)
+    .filter(Boolean);
+}
+
+function setHighlightedKeys(keys) {
+  if (highlightTimer) {
+    clearTimeout(highlightTimer);
+    highlightTimer = null;
+  }
+  highlightedKeys.value = new Set(keys);
+  if (keys.length) {
+    highlightTimer = setTimeout(() => {
+      highlightedKeys.value = new Set();
+      highlightTimer = null;
+    }, HIGHLIGHT_MS);
+  }
+}
+
+function formatRefreshTime(date = new Date()) {
+  const pad = (value) => String(value).padStart(2, '0');
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+async function fetchResults(options = {}) {
+  const silent = Boolean(options.silent);
+  const highlightChanges = Boolean(options.highlightChanges);
+  if (!silent) {
+    loading.value = true;
+    error.value = '';
+  }
   try {
     const payload = await fetchJson(buildListUrl());
-    items.value = Array.isArray(payload.items) ? payload.items : [];
-    total.value = Number(payload.total || 0);
+    const nextItems = Array.isArray(payload.items) ? payload.items : [];
+    const nextTotal = Number(payload.total || 0);
+    const nextSignature = getListSignature(nextItems, nextTotal);
+
+    if (!highlightChanges || !lastListSignature) {
+      setHighlightedKeys([]);
+    } else if (nextSignature !== lastListSignature) {
+      setHighlightedKeys(getChangedVisibleKeys(items.value, nextItems));
+    }
+
+    items.value = nextItems;
+    total.value = nextTotal;
+    lastListSignature = nextSignature;
+    lastRefreshText.value = formatRefreshTime();
   } catch (err) {
-    error.value = `Failed to load check results: ${err?.message || err}`;
-    items.value = [];
-    total.value = 0;
+    if (!silent) {
+      error.value = `Failed to load check results: ${err?.message || err}`;
+      items.value = [];
+      total.value = 0;
+      lastListSignature = '';
+      setHighlightedKeys([]);
+    }
   } finally {
-    loading.value = false;
+    if (!silent) {
+      loading.value = false;
+    }
   }
 }
 
@@ -276,8 +403,7 @@ async function openDetail(record) {
   detailLoading.value = true;
   detail.value = null;
   try {
-    const payload = await fetchJson(`${API_BASE}/api/dn/check_result/${encodeURIComponent(record.id)}`);
-    detail.value = payload.item || null;
+    detail.value = await fetchDetail(record.id);
   } catch (err) {
     error.value = `Failed to load check result detail: ${err?.message || err}`;
     detailOpen.value = false;
@@ -286,23 +412,320 @@ async function openDetail(record) {
   }
 }
 
+async function fetchDetail(id) {
+  const payload = await fetchJson(`${API_BASE}/api/dn/check_result/${encodeURIComponent(id)}`);
+  return payload.item || null;
+}
+
 function handleTableChange(nextPagination) {
   page.value = Number(nextPagination?.current || 1);
   pageSize.value = Number(nextPagination?.pageSize || 20);
   fetchResults();
 }
 
+function applyFilters() {
+  appliedDnFilter.value = String(dnFilter.value || '').trim().toUpperCase();
+  page.value = 1;
+  lastListSignature = '';
+  fetchResults();
+}
+
+function resetFilters() {
+  dnFilter.value = '';
+  appliedDnFilter.value = '';
+  page.value = 1;
+  lastListSignature = '';
+  fetchResults();
+}
+
 function goPage(nextPage) {
   page.value = Math.min(Math.max(1, nextPage), totalPages.value);
+  lastListSignature = '';
   fetchResults();
+}
+
+function isHighlighted(record) {
+  return highlightedKeys.value.has(getRecordKey(record));
+}
+
+function resolveRowClassName(record) {
+  return isHighlighted(record) ? 'refreshed-row' : '';
+}
+
+function startAutoRefresh() {
+  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+  autoRefreshTimer = setInterval(() => {
+    if (!loading.value) {
+      fetchResults({ silent: true, highlightChanges: true });
+    }
+  }, AUTO_REFRESH_MS);
+}
+
+function stopAutoRefresh() {
+  if (autoRefreshTimer) {
+    clearInterval(autoRefreshTimer);
+    autoRefreshTimer = null;
+  }
+  if (highlightTimer) {
+    clearTimeout(highlightTimer);
+    highlightTimer = null;
+  }
+}
+
+function loadScript(src, check) {
+  if (check?.()) return Promise.resolve();
+  const existing = document.querySelector(`script[src="${src}"]`);
+  if (existing) {
+    return new Promise((resolve, reject) => {
+      existing.addEventListener('load', resolve, { once: true });
+      existing.addEventListener('error', reject, { once: true });
+    });
+  }
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = src;
+    script.async = true;
+    script.onload = resolve;
+    script.onerror = () => reject(new Error(`Failed to load ${src}`));
+    document.head.appendChild(script);
+  });
+}
+
+async function ensurePdfScript() {
+  await loadScript('https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js', () => window.jspdf?.jsPDF);
+}
+
+function sanitizeFilename(value) {
+  return String(value || 'check-result').replace(/[^\w.-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'check-result';
+}
+
+function compactPdfText(value, maxLength = 90) {
+  const text = String(value ?? '-').replace(/\s+/g, ' ').trim() || '-';
+  return text.length > maxLength ? `${text.slice(0, maxLength - 1)}...` : text;
+}
+
+function drawPdfKeyValue(doc, label, value, x, y, width) {
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(100, 116, 139);
+  doc.text(label, x, y);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(23, 32, 51);
+  const lines = doc.splitTextToSize(String(value || '-'), width);
+  doc.text(lines, x, y + 13);
+  return y + 13 + lines.length * 10;
+}
+
+function drawPdfBoxTable(doc, rows, startY) {
+  const margin = 36;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const columns = [
+    { title: 'Box No.', key: 'boxNo', width: 120 },
+    { title: 'Item No.', key: 'itemNo', width: 92 },
+    { title: 'Description', key: 'itemDescEn', width: 150 },
+    { title: 'Qty', key: 'qty', width: 45 },
+    { title: 'Status', key: 'status', width: 60 },
+    { title: 'Checked At', key: 'checkedAt', width: 95 },
+  ];
+  const tableWidth = columns.reduce((sum, col) => sum + col.width, 0);
+  const x = Math.max(margin, (pageWidth - tableWidth) / 2);
+  let y = startY;
+  const headerHeight = 22;
+  const rowHeight = 28;
+
+  function drawHeader() {
+    doc.setFillColor(23, 32, 51);
+    doc.rect(x, y, tableWidth, headerHeight, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    let cursor = x;
+    columns.forEach((col) => {
+      doc.text(col.title, cursor + 5, y + 14, { maxWidth: col.width - 8 });
+      cursor += col.width;
+    });
+    y += headerHeight;
+  }
+
+  drawHeader();
+  rows.forEach((row, index) => {
+    if (y + rowHeight > pageHeight - margin) {
+      doc.addPage();
+      y = margin;
+      drawHeader();
+    }
+    if (index % 2 === 0) {
+      doc.setFillColor(248, 250, 252);
+      doc.rect(x, y, tableWidth, rowHeight, 'F');
+    }
+    doc.setDrawColor(226, 232, 240);
+    doc.line(x, y + rowHeight, x + tableWidth, y + rowHeight);
+    doc.setTextColor(23, 32, 51);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+
+    let cursor = x;
+    columns.forEach((col) => {
+      doc.text(String(row[col.key] ?? '-'), cursor + 5, y + 16, { maxWidth: col.width - 8 });
+      cursor += col.width;
+    });
+    y += rowHeight;
+  });
+}
+
+function getDetailFieldsForItem(item = {}) {
+  return [
+    { key: 'report_id', label: 'Report ID', value: item.report_id },
+    { key: 'dn_number', label: 'DN Number', value: item.dn_number },
+    { key: 'lsp', label: 'LSP', value: item.lsp },
+    { key: 'checker_name', label: 'Checker', value: item.checker_name },
+    { key: 'check_time', label: 'Check Time', value: item.check_time },
+    { key: 'status', label: 'Status', value: item.status },
+    { key: 'progress', label: 'Progress', value: `${item.checked_count || 0}/${item.box_count || 0}` },
+    { key: 'created_at', label: 'Created At', value: item.created_at },
+  ];
+}
+
+function getDetailBoxesForItem(item = {}) {
+  return Array.isArray(item.boxes) ? item.boxes : [];
+}
+
+async function createCheckResultPdf(item) {
+  await ensurePdfScript();
+  const { jsPDF } = window.jspdf || {};
+  if (!jsPDF) throw new Error('jsPDF failed to load');
+
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const margin = 36;
+  doc.setProperties({ title: `Check Result ${item.dn_number || item.report_id || ''}`.trim() });
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.setTextColor(23, 32, 51);
+  doc.text('Check Result Detail', margin, 42);
+
+  const fields = getDetailFieldsForItem(item);
+  const colWidth = (doc.internal.pageSize.getWidth() - margin * 2 - 18) / 2;
+  let leftY = 72;
+  let rightY = 72;
+  fields.forEach((field, index) => {
+    if (index % 2 === 0) {
+      leftY = drawPdfKeyValue(doc, field.label, field.value, margin, leftY, colWidth) + 10;
+    } else {
+      rightY = drawPdfKeyValue(doc, field.label, field.value, margin + colWidth + 18, rightY, colWidth) + 10;
+    }
+  });
+
+  const tableStartY = Math.max(leftY, rightY) + 18;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(23, 32, 51);
+  doc.text('Boxes', margin, tableStartY);
+  const rows = getDetailBoxesForItem(item).map((box) => ({
+    boxNo: compactPdfText(box.boxNo || box.box_no || '-', 45),
+    itemNo: compactPdfText(box.itemNo || box.item_no || '-', 38),
+    itemDescEn: compactPdfText(box.itemDescEn || box.item_desc_en || '-', 72),
+    qty: compactPdfText(box.qty || '-', 16),
+    status: compactPdfText(box.status || '-', 18),
+    checkedAt: compactPdfText(box.checkedAt || box.checked_at || '-', 28),
+  }));
+  drawPdfBoxTable(doc, rows, tableStartY + 14);
+
+  return {
+    doc,
+    filename: `${sanitizeFilename(item.dn_number || item.report_id)}_check_result.pdf`,
+  };
+}
+
+async function exportDetailPdf() {
+  if (!detail.value) return;
+  pdfExporting.value = true;
+  error.value = '';
+  try {
+    const { doc, filename } = await createCheckResultPdf(detail.value);
+    doc.save(filename);
+  } catch (err) {
+    error.value = `Failed to export PDF: ${err?.message || err}`;
+  } finally {
+    pdfExporting.value = false;
+  }
+}
+
+async function printRecord(record) {
+  if (!record?.id) return;
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    error.value = 'Failed to open print window. Please allow pop-ups for this site.';
+    return;
+  }
+
+  printWindow.document.write('<!doctype html><title>Preparing print...</title><p style="font-family:Arial,sans-serif">Preparing PDF...</p>');
+  printLoadingId.value = record.id;
+  error.value = '';
+  try {
+    const item = String(detail.value?.id ?? '') === String(record.id) ? detail.value : await fetchDetail(record.id);
+    if (!item) throw new Error('Check result detail not found');
+    const { doc, filename } = await createCheckResultPdf(item);
+    const blob = doc.output('blob');
+    const pdfUrl = URL.createObjectURL(blob);
+    const safeTitle = filename.replace(/[<>&"]/g, '');
+
+    printWindow.document.open();
+    printWindow.document.write(`
+      <!doctype html>
+      <html>
+        <head>
+          <title>${safeTitle}</title>
+          <style>
+            html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+            iframe { border: 0; width: 100%; height: 100%; }
+          </style>
+        </head>
+        <body>
+          <iframe id="pdf-frame" src="${pdfUrl}"></iframe>
+          <script>
+            const frame = document.getElementById('pdf-frame');
+            let printed = false;
+            function doPrint() {
+              if (printed) return;
+              printed = true;
+              try {
+                frame.contentWindow.focus();
+                frame.contentWindow.print();
+              } catch (err) {
+                window.focus();
+                window.print();
+              }
+            }
+            frame.addEventListener('load', () => setTimeout(doPrint, 350), { once: true });
+            setTimeout(doPrint, 1500);
+          <\/script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    setTimeout(() => URL.revokeObjectURL(pdfUrl), 60000);
+  } catch (err) {
+    error.value = `Failed to print PDF: ${err?.message || err}`;
+    printWindow.document.body.innerHTML = `<p style="font-family:Arial,sans-serif;color:#b91c1c">Failed to prepare PDF for printing.</p>`;
+  } finally {
+    printLoadingId.value = null;
+  }
 }
 
 watch(selectedDate, () => {
   page.value = 1;
+  lastListSignature = '';
   fetchResults();
 });
 
-onMounted(fetchResults);
+onMounted(() => {
+  fetchResults();
+  startAutoRefresh();
+});
+
+onBeforeUnmount(stopAutoRefresh);
 </script>
 
 <style scoped>
@@ -336,7 +759,13 @@ onMounted(fetchResults);
 .result-filters {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 10px;
+}
+
+.dn-filter-input {
+  width: 190px;
 }
 
 .result-alert {
@@ -345,7 +774,7 @@ onMounted(fetchResults);
 
 .summary-strip {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 16px;
 }
@@ -370,6 +799,7 @@ onMounted(fetchResults);
 .summary-strip strong {
   font-size: 22px;
   line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .desktop-table {
@@ -377,6 +807,16 @@ onMounted(fetchResults);
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   background: #ffffff;
+}
+
+:deep(.ant-table-row.refreshed-row > td) {
+  animation: refreshedRowGlow 9s ease-out;
+}
+
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .link-button {
@@ -426,9 +866,24 @@ onMounted(fetchResults);
   display: none;
 }
 
+:deep(.check-detail-modal-wrap .ant-modal) {
+  max-width: calc(100vw - 32px);
+}
+
+:deep(.check-detail-modal-wrap .ant-modal-body) {
+  max-height: calc(100vh - 170px);
+  overflow: auto;
+}
+
+.detail-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
 .detail-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 20px;
 }
@@ -452,6 +907,7 @@ onMounted(fetchResults);
 .detail-field strong {
   overflow-wrap: anywhere;
   font-size: 14px;
+  line-height: 1.35;
 }
 
 .box-section h2 {
@@ -509,14 +965,22 @@ onMounted(fetchResults);
 
   .result-filters {
     margin-top: 14px;
+    justify-content: stretch;
   }
 
-  .result-filters :deep(.ant-picker) {
+  .result-filters :deep(.ant-picker),
+  .dn-filter-input {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .result-filters :deep(.ant-btn) {
     flex: 1;
   }
 
   .summary-strip {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
 
@@ -545,6 +1009,10 @@ onMounted(fetchResults);
     background: #ffffff;
   }
 
+  .result-card.refreshed {
+    animation: refreshedCardGlow 9s ease-out;
+  }
+
   .card-top {
     display: flex;
     align-items: center;
@@ -564,6 +1032,12 @@ onMounted(fetchResults);
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
     margin: 0;
+  }
+
+  .card-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
   }
 
   .result-card dt {
@@ -589,6 +1063,53 @@ onMounted(fetchResults);
 
   .detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .detail-actions {
+    justify-content: stretch;
+  }
+
+  .detail-actions :deep(.ant-btn) {
+    width: 100%;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1100px) {
+  .detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@keyframes refreshedRowGlow {
+  0% {
+    background: #dcfce7;
+    box-shadow: inset 4px 0 0 #22c55e;
+  }
+  45% {
+    background: #f0fdf4;
+    box-shadow: inset 4px 0 0 #22c55e;
+  }
+  100% {
+    background: transparent;
+    box-shadow: inset 0 0 0 transparent;
+  }
+}
+
+@keyframes refreshedCardGlow {
+  0% {
+    border-color: #22c55e;
+    background: #dcfce7;
+    box-shadow: 0 10px 22px rgba(34, 197, 94, 0.18);
+  }
+  45% {
+    border-color: #86efac;
+    background: #f0fdf4;
+    box-shadow: 0 8px 18px rgba(34, 197, 94, 0.12);
+  }
+  100% {
+    border-color: #e2e8f0;
+    background: #ffffff;
+    box-shadow: none;
   }
 }
 </style>
