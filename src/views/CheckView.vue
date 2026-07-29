@@ -140,6 +140,10 @@
               Checker Name
               <input ref="checkerNameInput" v-model.trim="checkerName" class="text-input" type="text" autocomplete="name" placeholder="Please enter checker name" @keydown.enter="generatePdfReport" />
             </label>
+            <label class="field-label">
+              LSP
+              <input v-model.trim="reportLsp" class="text-input" type="text" autocomplete="organization" placeholder="LSP" @keydown.enter="generatePdfReport" />
+            </label>
             <div class="report-actions">
               <button class="secondary" type="button" @click="closeReportModal">Cancel</button>
               <button class="primary" type="button" @click="generatePdfReport">Confirm</button>
@@ -158,7 +162,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { createScanner } from '../composables/useScanner.js';
 import { findSgLpnInfos } from '../services/checkApi.js';
 import { getApiBase } from '../utils/env.js';
@@ -166,6 +170,23 @@ import { getApiBase } from '../utils/env.js';
 const API_BASE = getApiBase();
 const DEDUP_MS = 1200;
 const SCAN_MODE = Object.freeze({ DN: 'dn', BOX: 'box' });
+const CHECKER_NAME_STORAGE_KEY = 'check_report_checker_name';
+const REPORT_LSP_STORAGE_KEY = 'check_report_lsp';
+
+const readStoredValue = (key) => {
+  try {
+    return String(localStorage.getItem(key) || '').trim();
+  } catch (_) {
+    return '';
+  }
+};
+const writeStoredValue = (key, value) => {
+  try {
+    const text = String(value || '').trim();
+    if (text) localStorage.setItem(key, text);
+    else localStorage.removeItem(key);
+  } catch (_) {}
+};
 
 const cameraViewHost = ref(null);
 const checkerNameInput = ref(null);
@@ -173,7 +194,9 @@ const selectedCameraId = ref('');
 const detailModalOpen = ref(false);
 const selectedBoxKey = ref('');
 const reportModalOpen = ref(false);
-const checkerName = ref('');
+
+const checkerName = ref(readStoredValue(CHECKER_NAME_STORAGE_KEY));
+const reportLsp = ref(readStoredValue(REPORT_LSP_STORAGE_KEY));
 const reportFeedback = ref('A PDF report can be generated after all boxes are checked.');
 const reportDownloadUrl = ref('');
 const reportFilename = ref('delivery-list-check-result.pdf');
@@ -238,8 +261,10 @@ const groupedBoxes = computed(() => {
   });
 
   return Array.from(map.values()).sort((a, b) => {
+    const aLastChecked = a.key === state.lastCheckedBoxKey;
+    const bLastChecked = b.key === state.lastCheckedBoxKey;
+    if (aLastChecked !== bLastChecked) return aLastChecked ? -1 : 1;
     if (a.checked !== b.checked) return a.checked ? 1 : -1;
-    if (a.checked && b.checked) return String(b.checkedAt).localeCompare(String(a.checkedAt));
     return a.boxNo.localeCompare(b.boxNo, undefined, { numeric: true, sensitivity: 'base' });
   });
 });
@@ -251,6 +276,9 @@ const selectedBoxSummary = computed(() => {
   if (!selectedBox.value) return '';
   return `${selectedBox.value.rows.length} item${selectedBox.value.rows.length > 1 ? 's' : ''} · ${selectedBox.value.checked ? 'Checked' : 'Pending'}`;
 });
+
+watch(checkerName, (value) => writeStoredValue(CHECKER_NAME_STORAGE_KEY, value));
+watch(reportLsp, (value) => writeStoredValue(REPORT_LSP_STORAGE_KEY, value));
 
 function setPill(kind, text, type = '') {
   if (kind === 'reader') {
@@ -492,6 +520,7 @@ async function handleDnScan(text) {
 
     state.dnNumber = dnNumber;
     state.boxRows = matchedRows;
+    reportLsp.value = matchedRows.find((row) => String(row.lsp || '').trim())?.lsp || readStoredValue(REPORT_LSP_STORAGE_KEY);
     state.lastCheckedBoxKey = '';
     state.recent.clear();
     resetReportDownload();
@@ -529,7 +558,9 @@ function handleBoxScan(text) {
   resetReportDownload();
 
   if (canGenerateReport.value) {
-    setPill('reader', 'DBR: Complete · still scanning', 'ok');
+    void stopScan({ silent: true, keepStatus: true });
+    setPill('reader', 'DBR: Complete', 'ok');
+    setPill('camera', 'Check complete', 'ok');
     showToast(`Box confirmed: ${text}\nAll boxes for this DN have been scanned.`, 'success');
   } else {
     setPill('reader', 'DBR: Scanning next box', 'ok');
@@ -600,7 +631,7 @@ function buildReportPayload(checker) {
   return {
     reportId: generateReportId(),
     dnNumber: state.dnNumber,
-    lsp: state.boxRows[0]?.lsp || '',
+    lsp: reportLsp.value.trim(),
     checkerName: checker,
     checkTime: nowDateTime(),
     boxCount: groupedBoxes.value.length,
@@ -697,6 +728,8 @@ async function generatePdfReport() {
     return;
   }
   try {
+    writeStoredValue(CHECKER_NAME_STORAGE_KEY, checker);
+    writeStoredValue(REPORT_LSP_STORAGE_KEY, reportLsp.value);
     await ensureReportScripts();
   } catch (err) {
     showToast(err?.message || 'Failed to load report dependencies.', 'error');
@@ -724,7 +757,7 @@ async function generatePdfReport() {
     doc.setFontSize(10);
     doc.setTextColor(54, 65, 85);
     doc.text(`DN Number: ${state.dnNumber}`, margin, 78);
-    doc.text(`LSP: ${state.boxRows[0]?.lsp || '-'}`, margin, 96);
+    doc.text(`LSP: ${reportLsp.value.trim() || '-'}`, margin, 96);
     doc.text(`Checker Name: ${checker}`, margin, 114);
     doc.text(`Check Time: ${reportTime}`, margin, 132);
 
