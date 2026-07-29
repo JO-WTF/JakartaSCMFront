@@ -197,6 +197,7 @@ import { getApiBase } from '../utils/env.js';
 const API_BASE = getApiBase().replace(/\/+$/, '');
 const AUTO_REFRESH_MS = 15000;
 const HIGHLIGHT_MS = 9000;
+const DN_FILTER_DEBOUNCE_MS = 400;
 
 const loading = ref(false);
 const detailLoading = ref(false);
@@ -218,6 +219,7 @@ const lastRefreshText = ref('');
 let lastListSignature = '';
 let highlightTimer = null;
 let autoRefreshTimer = null;
+let dnFilterTimer = null;
 
 const columns = [
   { title: 'DN Number', dataIndex: 'dn_number', key: 'dn_number', width: 170 },
@@ -424,6 +426,10 @@ function handleTableChange(nextPagination) {
 }
 
 function applyFilters() {
+  if (dnFilterTimer) {
+    clearTimeout(dnFilterTimer);
+    dnFilterTimer = null;
+  }
   appliedDnFilter.value = String(dnFilter.value || '').trim().toUpperCase();
   page.value = 1;
   lastListSignature = '';
@@ -431,6 +437,10 @@ function applyFilters() {
 }
 
 function resetFilters() {
+  if (dnFilterTimer) {
+    clearTimeout(dnFilterTimer);
+    dnFilterTimer = null;
+  }
   dnFilter.value = '';
   appliedDnFilter.value = '';
   page.value = 1;
@@ -469,6 +479,10 @@ function stopAutoRefresh() {
   if (highlightTimer) {
     clearTimeout(highlightTimer);
     highlightTimer = null;
+  }
+  if (dnFilterTimer) {
+    clearTimeout(dnFilterTimer);
+    dnFilterTimer = null;
   }
 }
 
@@ -718,6 +732,14 @@ watch(selectedDate, () => {
   page.value = 1;
   lastListSignature = '';
   fetchResults();
+});
+
+watch(dnFilter, () => {
+  if (dnFilterTimer) clearTimeout(dnFilterTimer);
+  dnFilterTimer = setTimeout(() => {
+    dnFilterTimer = null;
+    applyFilters();
+  }, DN_FILTER_DEBOUNCE_MS);
 });
 
 onMounted(() => {
